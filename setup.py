@@ -35,5 +35,5 @@ setup(
       ],
     keywords = 'github, devops',
     packages = find_packages(),
-    install_requires = ['matplotlib','numpy','pyjwt','argparse','pycurl','pem','gitpython']
+    install_requires = ['matplotlib','numpy','pyjwt','argparse','pycurl>7.18.2','pem','gitpython']
     )
