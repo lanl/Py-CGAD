@@ -1,0 +1,11 @@
+image: ubuntu:groovy-20200911
+stages:
+  - test
+
+testing:
+  stage: test
+  allow_failure: false
+  before_script:
+    - apt-get install python3 pip
+  script:
+    - pwd
