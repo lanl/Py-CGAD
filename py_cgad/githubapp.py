@@ -227,7 +227,10 @@ class GitHubApp:
             raise Exception(error_msg)
 
         self._jwt_token = jwt.encode(payload, PEM, algorithm='RS256')
-        #self._jwt_token = jwt.decode(encoded_token, PEM, algorithms=["utf-8"])
+        print("jwt token")
+        print(self._jwt_token)
+        
+        self._jwt_token = encoded_token.decode("utf-8")
 
     def _PYCURL(self, header, url, option=None, custom_data=None):
         buffer_temp = BytesIO()
