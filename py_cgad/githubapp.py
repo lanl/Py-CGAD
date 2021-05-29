@@ -593,6 +593,9 @@ class GitHubApp:
         self._log.info("Posting description: %s" % description)
         self._log.info("Posting url: %s" % target_url)
         state_list = ['pending', 'failed', 'error', 'success']
+
+        if isinstance(state, list):
+            state = state[0]
         if state not in state_list:
             raise Exception("Unrecognized state specified " + state)
         if commit_sha is None:
