@@ -71,7 +71,7 @@ class GitHubApp:
     with the github api.
     """
 
-    def __init__(self, app_id, name, user, repo_name):
+    def __init__(self, app_id, name, user, repo_name, verbosity=0):
         """
         The app is generic and provides a template, to create an app for a specefic repository the
         following arguments are needed:
@@ -85,6 +85,7 @@ class GitHubApp:
         self._name = name
         self._user = user
         self._repo_name = repo_name
+        self._verbosity = verbosity
 
         self._log = logging.getLogger(self._repo_name)
         self._log.setLevel(logging.INFO)
@@ -230,7 +231,7 @@ class GitHubApp:
         buffer_temp = BytesIO()
         c = pycurl.Curl()
         c.setopt(c.URL, url)
-        c.setopt(pycurl.VERBOSE, 0)
+        c.setopt(pycurl.VERBOSE, self._verbosity)
         c.setopt(c.WRITEDATA, buffer_temp)
         c.setopt(c.HTTPHEADER, header)
         if option == "POST":
