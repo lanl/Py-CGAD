@@ -627,6 +627,8 @@ class GitHubApp:
         """Get status of current commit."""
         commit_sha = os.getenv('CI_COMMIT_SHA')
         if commit_sha is None:
+            commit_sha = os.getenv('TRAVIS_COMMIT')
+        if commit_sha is None:
             raise Exception(
                 "CI_COMMIT_SHA not defined in environment cannot post status")
 
