@@ -601,8 +601,11 @@ class GitHubApp:
         if commit_sha is None:
             commit_sha = os.getenv('CI_COMMIT_SHA')
         if commit_sha is None:
-            raise Exception(
-                "CI_COMMIT_SHA not defined in environment cannot post status")
+            commit_sha = os.getenv('TRAVIS_COMMIT')
+        if commit_sha is None:
+            error_msg = 'CI_COMMIT_SHA and or TRAVIS_COMMIT not defined in '
+            error_msg = error_msg + 'environment cannot post status.'
+            raise Exception(error_msg)
         custom_data_tmp = {"state": state}
         if context != "":
             custom_data_tmp["context"] = context
