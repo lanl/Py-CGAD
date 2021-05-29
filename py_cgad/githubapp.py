@@ -230,7 +230,9 @@ class GitHubApp:
         print("jwt token")
         print(self._jwt_token)
         
-        self._jwt_token = encoded_token.decode("utf-8")
+        self._jwt_token = self._jwt_token.decode('utf-8')
+        print("jwt token after decode utf-8")
+        print(self._jwt_token)
 
     def _PYCURL(self, header, url, option=None, custom_data=None):
         buffer_temp = BytesIO()
