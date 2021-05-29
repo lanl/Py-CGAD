@@ -221,8 +221,9 @@ class GitHubApp:
             error_msg = ("No permissions enabled for parthenon metrics app, either a pem file needs to "
                          "be provided or the GITHUB_APP_PEM variable needs to be defined")
             raise Exception(error_msg)
-        self._jwt_token = jwt.encode(
-            payload, PEM, algorithm='RS256').decode("utf-8")
+
+        encoded_token = jwt.encode(payload, PEM, algorithm='RS256')
+        self._jwt_token = jwt.decode(encoded_token, PEM, algorithm="utf-8")
 
     @staticmethod
     def _PYCURL(header, url, option=None, custom_data=None):
