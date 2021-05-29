@@ -71,7 +71,7 @@ class GitHubApp:
     with the github api.
     """
 
-    def __init__(self, app_id, name, user, repo_name, path_to_app_instance):
+    def __init__(self, app_id, name, user, repo_name):
         """
         The app is generic and provides a template, to create an app for a specefic repository the
         following arguments are needed:
@@ -85,7 +85,6 @@ class GitHubApp:
         self._name = name
         self._user = user
         self._repo_name = repo_name
-#        self._repo_path = path_to_repo
 
         self._log = logging.getLogger(self._repo_name)
         self._log.setLevel(logging.INFO)
