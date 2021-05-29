@@ -222,8 +222,8 @@ class GitHubApp:
                          "be provided or the GITHUB_APP_PEM variable needs to be defined")
             raise Exception(error_msg)
 
-        encoded_token = jwt.encode(payload, PEM, algorithm='RS256')
-        self._jwt_token = jwt.decode(encoded_token, PEM, algorithms=["utf-8"])
+        self._jwt_token = jwt.encode(payload, PEM, algorithm='RS256')
+        #self._jwt_token = jwt.decode(encoded_token, PEM, algorithms=["utf-8"])
 
     @staticmethod
     def _PYCURL(header, url, option=None, custom_data=None):
