@@ -637,3 +637,7 @@ class GitHubApp:
             self._header,
             self._repo_url + '/commits/Add_to_dev/statuses')
         return js_obj
+
+    def printStatus(self):
+        js_obj = self.getStatus()
+        print(js_obj)
