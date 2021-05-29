@@ -43,15 +43,18 @@ class Node:
         else:
             self.files.append(content)
 
-    def getNodes(self):
+    @property
+    def nodes(self):
         """Returns a list of all nodes in the current node, which are essentially directories."""
         return self.dirs
 
-    def getPath(self):
+    @property
+    def path(self):
         """Get the relative path of the current node."""
         return self.rel_path
 
-    def printTree(self):
+    @property
+    def print(self):
         """Print contents of node and all child nodes."""
         self._log.info("Contents in folder: " + self.rel_path)
         for fil in self.files:
@@ -59,7 +62,7 @@ class Node:
         for mis in self.misc:
             self._log.info("Misc " + mis)
         for node in self.dirs:
-            node.printTree()
+            node.print
 
 
 class GitHubApp:
@@ -305,11 +308,11 @@ class GitHubApp:
         This is an internal method that is meant to be used recursively to grab the contents of a
         branch of a remote repository.
         """
-        nodes = current_node.getNodes()
+        nodes = current_node.nodes
         for node in nodes:
 
             js_obj = self._PYCURL(self._header,
-                                  self._repo_url + "/contents/" + node.getPath(),
+                                  self._repo_url + "/contents/" + node.path,
                                   custom_data={"branch": branch})
 
             if isinstance(js_obj, list):
@@ -351,8 +354,8 @@ class GitHubApp:
         return None
 
     # Public Methods
-
-    def getBranches(self):
+    @property
+    def branches(self):
         """
         Gets the branches of the repository
 
@@ -620,7 +623,7 @@ class GitHubApp:
             self._repo_url + '/statuses/' + commit_sha,
             "POST",
             custom_data_tmp)
-
+    
     def getStatus(self):
         """Get status of current commit."""
         commit_sha = os.getenv('CI_COMMIT_SHA')
