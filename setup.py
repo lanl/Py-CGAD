@@ -34,6 +34,6 @@ setup(
       'Programming Language :: Python :: 3.9',
       ],
     keywords = 'github, devops',
-    packages = find_packages(),
+    packages = ['py-cgad'],
     install_requires = ['matplotlib','numpy','pyjwt','argparse','pycurl>7.18.2','pem','gitpython']
     )
