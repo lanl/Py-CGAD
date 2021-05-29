@@ -589,6 +589,9 @@ class GitHubApp:
 
     def postStatus(self, state, commit_sha=None, context="",
                    description="", target_url=""):
+        if isinstance(state, list):
+            state = state[0]
+
         """Post status of current commit."""
         self._log.info("Posting state: %s" % state)
         self._log.info("Posting context: %s" % context)
@@ -596,8 +599,6 @@ class GitHubApp:
         self._log.info("Posting url: %s" % target_url)
         state_list = ['pending', 'failed', 'error', 'success']
 
-        if isinstance(state, list):
-            state = state[0]
         if state not in state_list:
             raise Exception("Unrecognized state specified " + state)
         if commit_sha is None:
@@ -616,11 +617,15 @@ class GitHubApp:
         if target_url != "":
             custom_data_tmp["target_url"] = target_url
 
+        print("Custom data is")
+        print(custom_data_tmp)
+
         self._PYCURL(
             self._header,
             self._repo_url + '/statuses/' + commit_sha,
             "POST",
             custom_data_tmp)
+
     
     def getStatus(self):
         """Get status of current commit."""
