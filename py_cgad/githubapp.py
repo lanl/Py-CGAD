@@ -258,6 +258,8 @@ class GitHubApp:
         c.perform()
         c.close()
 
+        print("Buffer content from PYCURL command\n{}".format(json.loads(buffer_temp.getvalue())))
+
         return json.loads(buffer_temp.getvalue())
 
     def _generateInstallationId(self):
