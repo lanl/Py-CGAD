@@ -648,13 +648,13 @@ class GitHubApp:
 
         custom_data_tmp = {"state": state}
         if context is not None:
-            custom_data_tmp["context"] = context
+            custom_data_tmp.update({"context", context})
         if description is not None:
-            custom_data_tmp["description"] = description
+            custom_data_tmp.update({"description", description})
         if target_url is not None:
             # Make sure has http(s) scheme
             if urlIsValid(target_url):
-                custom_data_tmp["target_url"] = target_url
+                custom_data_tmp.update({"target_url", target_url})
             else:
                 error_msg = "Invalid url detected while posting attempting"
                 error_msg = error_msg + " to post status.\n{}".format(target_url)
@@ -664,6 +664,7 @@ class GitHubApp:
         print("Before calling PYCURL header {}".format(self._header))
         print("Before calling PYCURL repo_url {}".format(self._repo_url))
         print("Before calling PYCURL commit_sha {}".format(commit_sha))
+        print("Custom data is")
         print(custom_data_tmp)
 
         self._PYCURL(
