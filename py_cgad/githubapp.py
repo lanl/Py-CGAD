@@ -248,9 +248,12 @@ class GitHubApp:
         elif option == "PUT":
             c.setopt(c.PUT, 1)
 
-        if custom_data is not None:
-            buffer_temp2 = BytesIO(json.dumps(custom_data).encode('utf-8'))
-            c.setopt(c.READDATA, buffer_temp2)
+        if option is not "POST":
+            # POSTFIELDS will have already handled this if the "POST" command
+            # was used
+            if custom_data is not None:
+                buffer_temp2 = BytesIO(json.dumps(custom_data).encode('utf-8'))
+                c.setopt(c.READDATA, buffer_temp2)
 
         c.perform()
         c.close()
