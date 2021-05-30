@@ -647,8 +647,8 @@ class GitHubApp:
             raise Exception(error_msg)
 
         if len(commit_sha) != 40:
-            error_msg = 'Unconventional commit sha encountered ' + str(commit_sha)
-            error_msg = error_msg + ' environment cannot post status. Sha '
+            error_msg = 'Unconventional commit sha encountered (' + str(commit_sha)
+            error_msg = error_msg + ') environment cannot post status. Sha '
             error_msg = error_msg + 'should be 40 characters this one is '
             error_msg = error_msg + str(len(commit_sha))
             raise Exception(error_msg)
