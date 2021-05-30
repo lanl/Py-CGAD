@@ -653,11 +653,11 @@ class GitHubApp:
         if target_url is not None:
             # Make sure has http(s) scheme
             if urlIsValid(target_url):
-		custom_data_tmp["target_url"] = target_url
-	    else:
-		error_msg = "Invalid url detected while posting attempting"
-		error_msg = error_msg + " to post status.\n{}".format(target_url)
-		raise Exception(error_msg)
+                custom_data_tmp["target_url"] = target_url
+            else:
+                error_msg = "Invalid url detected while posting attempting"
+                error_msg = error_msg + " to post status.\n{}".format(target_url)
+                raise Exception(error_msg)
 
         print("Custom data is")
         print("Before calling PYCURL header {}".format(self._header))
