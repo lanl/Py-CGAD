@@ -12,8 +12,33 @@ from io import BytesIO
 import jwt
 import pem
 import pycurl
+import re
 from git import Repo
 import git
+
+# Checks to ensure a url is valid
+def urlIsValid(candidate_url):
+    # Regex to check valid URL
+    regex = ("((http|https)://)(www.)?" +
+             "[a-zA-Z0-9@:%._\\+~#?&//=]" +
+             "{2,256}\\.[a-z]" +
+             "{2,6}\\b([-a-zA-Z0-9@:%" +
+             "._\\+~#?&//=]*)")
+     
+    # Compile the ReGex
+    compiled_regex = re.compile(regex)
+ 
+    # If the string is empty
+    # return false
+    if (candidate_url == None):
+        return False
+ 
+    # Return if the string
+    # matched the ReGex
+    if(re.search(compiled_regex, candidate_url)):
+        return True
+    else:
+        return False
 
 class Node:
     def __init__(self, dir_name="", rel_path=""):
@@ -248,12 +273,9 @@ class GitHubApp:
         elif option == "PUT":
             c.setopt(c.PUT, 1)
 
-        if option is not "POST":
-            # POSTFIELDS will have already handled this if the "POST" command
-            # was used
-            if custom_data is not None:
-                buffer_temp2 = BytesIO(json.dumps(custom_data).encode('utf-8'))
-                c.setopt(c.READDATA, buffer_temp2)
+        if custom_data is not None:
+            buffer_temp2 = BytesIO(json.dumps(custom_data).encode('utf-8'))
+            c.setopt(c.READDATA, buffer_temp2)
 
         c.perform()
         c.close()
@@ -602,7 +624,7 @@ class GitHubApp:
         return repo
 
     def postStatus(self, state, commit_sha=None, context="",
-                   description="", target_url=""):
+                   description="", target_url=None):
         if isinstance(state, list):
             state = state[0]
 
@@ -628,8 +650,14 @@ class GitHubApp:
             custom_data_tmp["context"] = context
         if description != "":
             custom_data_tmp["description"] = description
-        if target_url != "":
-            custom_data_tmp["target_url"] = target_url
+        if target_url is not None:
+            # Make sure has http(s) scheme
+            if urlIsValid(target_url):
+		custom_data_tmp["target_url"] = target_url
+	    else:
+		error_msg = "Invalid url detected while posting attempting"
+		error_msg = error_msg + " to post status.\n{}".format(target_url)
+		raise Exception(error_msg)
 
         print("Custom data is")
         print("Before calling PYCURL header {}".format(self._header))
