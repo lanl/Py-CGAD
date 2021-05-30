@@ -278,6 +278,9 @@ class GitHubApp:
         # The installation id will be listed at the end of the url path
         self._install_id = js_obj['html_url'].rsplit('/', 1)[-1]
 
+        print("Install id json obj {}".format(js_obj))
+        print("Installation id is {}".format(self._install_id))
+
     def _generateAccessToken(self):
         """
         Creates an access token
