@@ -623,8 +623,8 @@ class GitHubApp:
         repo = self.cloneWikiRepo()
         return repo
 
-    def postStatus(self, state, commit_sha=None, context="",
-                   description="", target_url=None):
+    def postStatus(self, state, commit_sha=None, context=None,
+                   description=None, target_url=None):
         if isinstance(state, list):
             state = state[0]
 
@@ -645,10 +645,11 @@ class GitHubApp:
             error_msg = 'CI_COMMIT_SHA and or TRAVIS_COMMIT not defined in '
             error_msg = error_msg + 'environment cannot post status.'
             raise Exception(error_msg)
+
         custom_data_tmp = {"state": state}
-        if context != "":
+        if context is not None:
             custom_data_tmp["context"] = context
-        if description != "":
+        if description is not None:
             custom_data_tmp["description"] = description
         if target_url is not None:
             # Make sure has http(s) scheme
