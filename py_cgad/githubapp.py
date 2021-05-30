@@ -95,7 +95,7 @@ class GitHubApp:
     """
     GitHubApp Class
 
-    This class is responsible for authenticating against the parthenon repository and interacting
+    This class is responsible for authenticating against the app repository and interacting
     with the github api.
     """
 
@@ -190,28 +190,29 @@ class GitHubApp:
                 self._log.error(error_msg)
                 raise
         else:
-
             if pathlib.Path.is_file(self._config_file_path):
 
                 with open(self._config_file_path, 'r') as file:
                     line = file.readline()
                     # Throw an error if the path is not valid
                     if not os.path.isdir(line):
-                        error_msg = "The cached path to your repository is not valid {}".format(
-                            line)
+                        error_msg = "The cached path to your repository is " \
+                                "not valid: ({})".format(line)
+
+                        error_msg = error_msg + "\nThe config file is located at: ({})".format(self._config_file_path)
                         self._log.error(error_msg)
                     self._repo_path = line
             else:
                 # If no config file exists throw an error
-                error_msg = str("No repository path is known to the parthenon_performance_app.\n"
-                                "Please call --repository-path or -rp with the path the repository to register it.\n")
+                error_msg = ("No repository path is known to the " + self._name + ".\n"
+                            "Please call --repository-path or -rp with the path the repository to register it.\n")
                 self._log.error(error_msg)
                 raise
 
-        self._parthenon_wiki_dir = os.path.normpath(
+        self._app_wiki_dir = os.path.normpath(
             self._repo_path + "/../" + self._repo_name + ".wiki")
-        self._log.info("Parthenon wiki dir")
-        self._log.info(self._parthenon_wiki_dir)
+        self._log.info(self._repo_name + " wiki dir is:")
+        self._log.info(self._app_wiki_dir)
         if isinstance(pem_file, list):
             self._generateJWT(pem_file[0])
         else:
@@ -247,8 +248,8 @@ class GitHubApp:
         PEM = str(certs[0])
 
         if PEM == "":
-            error_msg = ("No permissions enabled for parthenon metrics app, either a pem file needs to "
-                         "be provided or the GITHUB_APP_PEM variable needs to be defined")
+            error_msg = ("No permissions enabled for " + self._name + " app, either a pem file needs to "
+                        "be provided or the GITHUB_APP_PEM variable needs to be defined")
             raise Exception(error_msg)
 
         self._jwt_token = jwt.encode(payload, PEM, algorithm='RS256')
@@ -507,17 +508,17 @@ class GitHubApp:
                 error_msg = "Files can only be uploaded to the wiki repositories master branch"
                 raise Exception(error_msg)
 
-            if os.path.exists(self._parthenon_wiki_dir + "/" +
+            if os.path.exists(self._app_wiki_dir + "/" +
                               os.path.basename(os.path.normpath(file_name))):
                 commit_msg = "Updating file " + file_name
             else:
                 commit_msg = "Adding file " + file_name
             repo = self.getWikiRepo(branch)
-            destination = self._parthenon_wiki_dir + "/" + \
+            destination = self._app_wiki_dir + "/" + \
                 os.path.basename(os.path.normpath(file_name))
             if not filecmp.cmp(file_name, destination):
                 shutil.copy(file_name, destination)
-            repo.index.add([str(self._parthenon_wiki_dir + "/" +
+            repo.index.add([str(self._app_wiki_dir + "/" +
                                 os.path.basename(os.path.normpath(file_name)))])
             repo.index.commit(commit_msg)
             repo.git.push("--set-upstream", "origin", repo.head.reference)
@@ -595,11 +596,11 @@ class GitHubApp:
         wiki_remote = "https://x-access-token:" + \
             str(self._access_token) + "@github.com/" + \
             self._user + "/" + self._repo_name + ".wiki.git"
-        if not os.path.isdir(str(self._parthenon_wiki_dir)):
-            repo = Repo.clone_from(wiki_remote, self._parthenon_wiki_dir)
+        if not os.path.isdir(str(self._app_wiki_dir)):
+            repo = Repo.clone_from(wiki_remote, self._app_wiki_dir)
         else:
-            repo = Repo(self._parthenon_wiki_dir)
-            g = git.cmd.Git(self._parthenon_wiki_dir)
+            repo = Repo(self._app_wiki_dir)
+            g = git.cmd.Git(self._app_wiki_dir)
             self._log.info("Our remote url is %s" % wiki_remote)
             # git remote show origini
             self._log.info(g.execute(['git', 'remote', 'show', 'origin']))
