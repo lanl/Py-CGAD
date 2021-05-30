@@ -624,6 +624,9 @@ class GitHubApp:
             custom_data_tmp["target_url"] = target_url
 
         print("Custom data is")
+        print("Before calling PYCURL header {}".format(self._header))
+        print("Before calling PYCURL repo_url {}".format(self._repo_url))
+        print("Before calling PYCURL commit_sha {}".format(commit_sha))
         print(custom_data_tmp)
 
         self._PYCURL(
@@ -640,12 +643,12 @@ class GitHubApp:
             commit_sha = os.getenv('TRAVIS_COMMIT')
         if commit_sha is None:
             raise Exception(
-                "CI_COMMIT_SHA not defined in environment cannot post status")
+                "CI_COMMIT_SHA not defined in environment cannot get status")
 
         # 1. Check if file exists if so get SHA
         js_obj = self._PYCURL(
             self._header,
-            self._repo_url + '/commits/Add_to_dev/statuses')
+            self._repo_url + '/commits/' + str(commit_sha) + '/statuses')
         return js_obj
 
     def printStatus(self):
