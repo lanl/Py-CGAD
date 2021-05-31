@@ -838,5 +838,5 @@ class GitHubApp:
                 return json_obj["state"], code, commit_sha
 
     def printStatus(self):
-        js_obj = self.getStatus()
+        js_obj = self.getStatuses()
         print(js_obj)
