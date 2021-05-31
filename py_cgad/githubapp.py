@@ -95,11 +95,17 @@ class GitHubApp:
     """
     GitHubApp Class
 
-    This class is responsible for authenticating against the app repository and interacting
-    with the github api.
+    This class is responsible for authenticating against the app repository and 
+    interacting with the github api.
     """
 
-    def __init__(self, app_id, name, user, repo_name, verbosity=0):
+    def __init__(self,
+            app_id,
+            name,
+            user,
+            repo_name,
+            location_of_inheriting_class=None,
+            verbosity=0):
         """
         The app is generic and provides a template, to create an app for a specefic repository the
         following arguments are needed:
@@ -132,13 +138,20 @@ class GitHubApp:
         self._config_file_path = pathlib.Path.joinpath(
             self._config_file_dir, self._config_file_name)
 
+        self._child_class_path = None
+        if location_of_inheriting_class is not None:
+            if os.path.isfile(location_of_inheriting_class):
+                self._child_class_path = location_of_inheriting_class
         # Create an empty config file if one does not exist
         if not pathlib.Path.is_file(self._config_file_path):
             open(self._config_file_path, 'a').close()
 
-    def initialize(self, use_wiki=False, ignore=False,
-                   pem_file="", create_branch=False,
-                   path_to_repo=None):
+    def initialize(self,
+            pem_file,
+            use_wiki=False,
+            ignore=False,
+            create_branch=False,
+            path_to_repo=None):
         """
         Sets basic properties of the app should be called before any other methods
 
@@ -198,8 +211,9 @@ class GitHubApp:
                     if not os.path.isdir(line):
                         error_msg = "The cached path to your repository is " \
                                 "not valid: ({})".format(line)
-
                         error_msg = error_msg + "\nThe config file is located at: ({})".format(self._config_file_path)
+                        error_msg = error_msg + "\nConsider initializing the app " + self._name + " with the path of "
+                        error_msg = error_msg + "repository it will be analyzing."
                         self._log.error(error_msg)
                     self._repo_path = line
             else:
@@ -213,10 +227,17 @@ class GitHubApp:
             self._repo_path + "/../" + self._repo_name + ".wiki")
         self._log.info(self._repo_name + " wiki dir is:")
         self._log.info(self._app_wiki_dir)
+
         if isinstance(pem_file, list):
-            self._generateJWT(pem_file[0])
-        else:
-            self._generateJWT(pem_file)
+            pem_file = pem_file[0]
+
+        # Check that pem file is actually a file
+        if not os.path.isfile(pem_file):
+            error_msg = "Permissions file ({})".format(pem_file)
+            error_msg = error_msg + " is not a valid file."
+            raise Exception(error_msg)
+
+        self._generateJWT(pem_file)
         self._generateInstallationId()
         self._generateAccessToken()
 
@@ -235,24 +256,30 @@ class GitHubApp:
             'iss': self._app_id
         }
 
-        PEM = ""
-        if pem_file == "":
+        PEM = None
+        if pem_file == None:
             if "GITHUB_APP_PEM" in os.environ:
                 pem_file = os.environ.get('GITHUB_APP_PEM')
             else:
-                error_msg = "A pem file has not been specified and GITHUB_APP_PEM env varaible is not defined"
+                error_msg = "A pem file has not been specified and "
+                error_msg += "GITHUB_APP_PEM env varaible is not defined"
                 raise Exception(error_msg)
 
         self._log.info("File loc %s" % pem_file)
         certs = pem.parse_file(pem_file)
         PEM = str(certs[0])
 
-        if PEM == "":
-            error_msg = ("No permissions enabled for " + self._name + " app, either a pem file needs to "
-                        "be provided or the GITHUB_APP_PEM variable needs to be defined")
+        if PEM is None:
+            error_msg = ("No permissions enabled for " + self._name + " app, "
+                        "either a pem file needs to be provided or the "
+                        "GITHUB_APP_PEM variable needs to be defined")
             raise Exception(error_msg)
 
         self._jwt_token = jwt.encode(payload, PEM, algorithm='RS256')
+        if isinstance(self._jwt_token, bytes):
+            # Older versions of jwt return a byte string as opposed to a string
+            self._jwt_token = self._jwt_token.decode('utf-8')
+        print(type(self._jwt_token))
 
     def _PYCURL(self, header, url, option=None, custom_data=None):
 
@@ -289,8 +316,8 @@ class GitHubApp:
         """
         Generate an installation id
 
-        This method will populate the installation id attribute using the internally stored json
-        web token.
+        This method will populate the installation id attribute using the 
+        internally stored json web token.
         """
         header = [
             'Authorization: Bearer ' + str(self._jwt_token),
@@ -304,17 +331,18 @@ class GitHubApp:
             js_obj = js_obj[0]
 
         # The installation id will be listed at the end of the url path
+        print("Install id json obj {}".format(js_obj))
         self._install_id = js_obj['html_url'].rsplit('/', 1)[-1]
 
-        print("Install id json obj {}".format(js_obj))
         print("Installation id is {}".format(self._install_id))
 
     def _generateAccessToken(self):
         """
         Creates an access token
 
-        This method will populate the installation attribute using the installation id. The token
-        is needed to authenticate any actions run by the application.
+        This method will populate the installation attribute using the 
+        installation id. The token is needed to authenticate any actions 
+        run by the application.
         """
         header = [
             'Authorization: Bearer ' + str(self._jwt_token),
@@ -332,7 +360,7 @@ class GitHubApp:
         self._access_token = js_obj['token']
 
         self._header = [
-            'Authorization: token ' + self._access_token,
+            'Authorization: token ' + str(self._access_token),
             'Accept: ' + self._api_version,
         ]
 
@@ -340,8 +368,8 @@ class GitHubApp:
         """
         Creates a content tree of the branch
 
-        This is an internal method that is meant to be used recursively to grab the contents of a
-        branch of a remote repository.
+        This is an internal method that is meant to be used recursively
+        to grab the contents of a branch of a remote repository.
         """
         nodes = current_node.nodes
         for node in nodes:
@@ -374,6 +402,20 @@ class GitHubApp:
                 self._branches.append(js_obj['name'])
                 self._branch_current_commit_sha.update(
                     {js_obj['name']: js_obj['commit']['sha']})
+
+    def generateCandidateRepoPath(self):
+        """Generate a possible path to the repo
+
+        Provides a suggestion for the repository path the app is meant to work
+        on. This will only provide a correct suggestion if the app code exists
+        within the repository. If it is unable to identify a suitable suggestion
+        it will return None.
+        """
+        if self._child_class_path is not None:
+            index = self._child_class_path.rfind(self._repo_name)
+            if index != -1:
+                return self._child_class_path[0:index+len(self._repo_name)]
+        return None
 
     def getBranchMergingWith(self, branch):
         """Gets the name of the target branch of `branch` which it will merge with."""
@@ -422,8 +464,9 @@ class GitHubApp:
         """"
         Method forces an update of the localy stored branch tree.
 
-        Will update regardless of whether the class already contains a local copy. Might be
-        necessary if the remote github repository is updated.
+        Will update regardless of whether the class already contains a 
+        local copy. Might be necessary if the remote github repository 
+        is updated.
         """
         self._getBranches()
 
@@ -431,9 +474,9 @@ class GitHubApp:
         """
         Creates a git branch
 
-        Will create a branch if it does not already exists, if the branch does exist
-        will do nothing. The new branch will be created by forking it of the latest
-        commit of the default branch
+        Will create a branch if it does not already exists, if the branch 
+        does exist will do nothing. The new branch will be created by 
+        forking it of the latest commit of the default branch
         """
         if branch_to_fork_from is None:
             branch_to_fork_from = self._default_branch
@@ -457,8 +500,8 @@ class GitHubApp:
         """
         Returns the contents of a branch
 
-        Returns the contents of a branch as a dictionary, where the key is the content and the value
-        is the sha of the file/folder etc.
+        Returns the contents of a branch as a dictionary, where the key 
+        is the content and the value is the sha of the file/folder etc.
         """
         if branch is None:
             branch = self._default_branch
@@ -480,8 +523,9 @@ class GitHubApp:
         """
         This method attempts to upload a file to the specified branch.
 
-        If the file is found to already exist it will be updated. Image files will by default be placed
-        in a figures branch of the main repository, so as to not bloat the repositories commit history.
+        If the file is found to already exist it will be updated. Image 
+        files will by default be placed in a figures branch of the main
+        repository, so as to not bloat the repositories commit history.
         """
 
         # Will only be needed if we are creating a branch
@@ -571,8 +615,8 @@ class GitHubApp:
         """
         Gets the contents of a branch as a tree
 
-        Method will grab the contents of the specified branch from the remote repository. It will
-        return the contents as a tree object.
+        Method will grab the contents of the specified branch from the
+        remote repository. It will return the contents as a tree object.
         """
         # 1. Check if file exists
         js_obj = self._PYCURL(
@@ -590,8 +634,9 @@ class GitHubApp:
         """
         Clone a git repo
 
-        Will clone the wiki repository if it does not exist, if it does exist it will update the
-        access permissions by updating the wiki remote url. The repository is then returned.
+        Will clone the wiki repository if it does not exist, if it does
+        exist it will update the access permissions by updating the wiki
+        remote url. The repository is then returned.
         """
         wiki_remote = "https://x-access-token:" + \
             str(self._access_token) + "@github.com/" + \
@@ -616,10 +661,11 @@ class GitHubApp:
         """
         Get the git wiki repo
 
-        The github api has only limited supported for interacting with the github wiki, as such the best
-        way to do this is to actually clone the github repository and interact with the git repo
-        directly. This method will clone the repository if it does not exist. It will then return a
-        repo object.
+        The github api has only limited supported for interacting with
+        the github wiki, as such the best way to do this is to actually
+        clone the github repository and interact with the git repo
+        directly. This method will clone the repository if it does not
+        exist. It will then return a repo object.
         """
         repo = self.cloneWikiRepo()
         return repo
@@ -682,14 +728,16 @@ class GitHubApp:
             custom_data_tmp)
 
     
-    def getStatus(self):
-        """Get status of current commit."""
-        commit_sha = os.getenv('CI_COMMIT_SHA')
+    def getStatuses(self, commit_sha = None):
+        """Get status of provided commit or commit has defined in the env vars."""
+        if commit_sha is None:
+            commit_sha = os.getenv('CI_COMMIT_SHA')
         if commit_sha is None:
             commit_sha = os.getenv('TRAVIS_COMMIT')
         if commit_sha is None:
-            raise Exception(
-                "CI_COMMIT_SHA not defined in environment cannot get status")
+            error_msg = ("Commit sha not provided and CI_COMMIT_SHA and "
+                "TRAVIS_COMMIT not defined in environment cannot get status")
+            raise Exception(error_msg)
 
         # 1. Check if file exists if so get SHA
         js_obj = self._PYCURL(
