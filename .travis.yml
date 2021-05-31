@@ -1,0 +1,30 @@
+sudo: required
+
+dist: focal
+addons:
+  apt:
+    update: true
+
+language: python
+
+jobs:
+  include:
+    - stage: test
+      
+before_install:
+  - pwd
+  - ls
+  - openssl aes-256-cbc -K $encrypted_ecac9f3e2851_key -iv $encrypted_ecac9f3e2851_iv -in ./examples/PyCGADExample/statusreportingapp.2021-05-29.private-key.pem.enc -out ./examples/PyCGADExample/statusreportingapp.2021-05-29.private-key.pem -d
+
+install:
+  - ls
+  - sudo apt-get install gnutls-bin libghc-gnutls-dev
+  - python3 -m pip install cryptography --upgrade
+  - python3 -m pip install .  # --user flag is not allowed in travis virtual env
+  
+script:
+  - echo "Display env variables"
+  - env
+  - |
+    cd ./examples/PyCGADExample
+    python3 -m pytest -s
