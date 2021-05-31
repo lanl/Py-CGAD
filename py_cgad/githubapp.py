@@ -306,11 +306,12 @@ class GitHubApp:
             c.setopt(c.READDATA, buffer_temp2)
 
         c.perform()
+        code = c.getinfo(c.HTTP_CODE)
         c.close()
 
         print("Buffer content from PYCURL command\n{}".format(json.loads(buffer_temp.getvalue())))
 
-        return json.loads(buffer_temp.getvalue())
+        return json.loads(buffer_temp.getvalue()), code
 
     def _generateInstallationId(self):
         """
@@ -324,7 +325,7 @@ class GitHubApp:
             'Accept: ' + self._api_version
         ]
 
-        js_obj = self._PYCURL(
+        js_obj, _ = self._PYCURL(
             header, 'https://api.github.com/app/installations')
 
         if isinstance(js_obj, list):
@@ -352,7 +353,7 @@ class GitHubApp:
         https_url_access_tokens = "https://api.github.com/app/installations/" + \
             self._install_id + "/access_tokens"
 
-        js_obj = self._PYCURL(header, https_url_access_tokens, option="POST")
+        js_obj, _ = self._PYCURL(header, https_url_access_tokens, option="POST")
 
         if isinstance(js_obj, list):
             js_obj = js_obj[0]
@@ -374,7 +375,7 @@ class GitHubApp:
         nodes = current_node.nodes
         for node in nodes:
 
-            js_obj = self._PYCURL(self._header,
+            js_obj, _ = self._PYCURL(self._header,
                                   self._repo_url + "/contents/" + node.path,
                                   custom_data={"branch": branch})
 
@@ -394,7 +395,7 @@ class GitHubApp:
         self._branch_current_commit_sha = {}
         while page_found:
             page_found = False
-            js_obj_list = self._PYCURL(
+            js_obj_list, _ = self._PYCURL(
                 self._header, self._repo_url + "/branches?page={}".format(page_index))
             page_index = page_index + 1
             for js_obj in js_obj_list:
@@ -419,7 +420,7 @@ class GitHubApp:
 
     def getBranchMergingWith(self, branch):
         """Gets the name of the target branch of `branch` which it will merge with."""
-        js_obj_list = self._PYCURL(self._header, self._repo_url + "/pulls")
+        js_obj_list, _ = self._PYCURL(self._header, self._repo_url + "/pulls")
         self._log.info(
             "Checking if branch is open as a pr and what branch it is targeted to merge with.\n")
         self._log.info("Checking branch %s\n" % (self._user + ":" + branch))
@@ -506,7 +507,7 @@ class GitHubApp:
         if branch is None:
             branch = self._default_branch
         # 1. Check if file exists if so get SHA
-        js_obj = self._PYCURL(
+        js_obj, _ = self._PYCURL(
             self._header,
             self._repo_url + '/contents?ref=' + branch,
             custom_data={"branch": branch})
@@ -619,7 +620,7 @@ class GitHubApp:
         remote repository. It will return the contents as a tree object.
         """
         # 1. Check if file exists
-        js_obj = self._PYCURL(
+        js_obj, _ = self._PYCURL(
             self._header,
             self._repo_url + "/contents",
             "PUT",
@@ -740,10 +741,24 @@ class GitHubApp:
             raise Exception(error_msg)
 
         # 1. Check if file exists if so get SHA
-        js_obj = self._PYCURL(
+        js_obj, code = self._PYCURL(
             self._header,
             self._repo_url + '/commits/' + str(commit_sha) + '/statuses')
-        return js_obj
+        return js_obj, code, commit_sha
+
+    def getState(self, commit_sha = None, index=0):
+        """Get state of the provided commit at the provided index"""
+        json_objs, code, commit_sha = self.getStatuses(commit_sha)
+
+        if len(json_objs) <= index:
+            error_msg = "Cannot get state of status at index {}".format(index)
+            error_msg += "\nThere are only a total of statuses {}".format(len(json_bjs))
+            error_msg += " at the provided commit ({})".format(commit_sha)
+            raise Exception(error_msg)
+
+        for count, json_obj in enumerate(json_objs):
+            if count == index:
+                return json_obj['state'], code, commit_sha
 
     def printStatus(self):
         js_obj = self.getStatus()
