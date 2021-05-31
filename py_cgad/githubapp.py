@@ -19,26 +19,29 @@ import git
 # Checks to ensure a url is valid
 def urlIsValid(candidate_url):
     # Regex to check valid URL
-    regex = ("((http|https)://)(www.)?" +
-             "[a-zA-Z0-9@:%._\\+~#?&//=]" +
-             "{2,256}\\.[a-z]" +
-             "{2,6}\\b([-a-zA-Z0-9@:%" +
-             "._\\+~#?&//=]*)")
-     
+    regex = (
+        "((http|https)://)(www.)?"
+        + "[a-zA-Z0-9@:%._\\+~#?&//=]"
+        + "{2,256}\\.[a-z]"
+        + "{2,6}\\b([-a-zA-Z0-9@:%"
+        + "._\\+~#?&//=]*)"
+    )
+
     # Compile the ReGex
     compiled_regex = re.compile(regex)
- 
+
     # If the string is empty
     # return false
-    if (candidate_url == None):
+    if candidate_url == None:
         return False
- 
+
     # Return if the string
     # matched the ReGex
-    if(re.search(compiled_regex, candidate_url)):
+    if re.search(compiled_regex, candidate_url):
         return True
     else:
         return False
+
 
 class Node:
     def __init__(self, dir_name="", rel_path=""):
@@ -95,17 +98,19 @@ class GitHubApp:
     """
     GitHubApp Class
 
-    This class is responsible for authenticating against the app repository and 
+    This class is responsible for authenticating against the app repository and
     interacting with the github api.
     """
 
-    def __init__(self,
-            app_id,
-            name,
-            user,
-            repo_name,
-            location_of_inheriting_class=None,
-            verbosity=0):
+    def __init__(
+        self,
+        app_id,
+        name,
+        user,
+        repo_name,
+        location_of_inheriting_class=None,
+        verbosity=0,
+    ):
         """
         The app is generic and provides a template, to create an app for a specefic repository the
         following arguments are needed:
@@ -124,8 +129,7 @@ class GitHubApp:
         self._log = logging.getLogger(self._repo_name)
         self._log.setLevel(logging.INFO)
 
-        fh = logging.FileHandler(
-            self._repo_name + '.log', mode='w', encoding='utf-8')
+        fh = logging.FileHandler(self._repo_name + ".log", mode="w", encoding="utf-8")
         fh.setLevel(logging.INFO)
         self._log.addHandler(fh)
 
@@ -136,7 +140,8 @@ class GitHubApp:
         self._config_file_dir = pathlib.Path(__file__).parent.absolute()
         self._config_file_name = "githubapp_" + str(self._app_id) + ".config"
         self._config_file_path = pathlib.Path.joinpath(
-            self._config_file_dir, self._config_file_name)
+            self._config_file_dir, self._config_file_name
+        )
 
         self._child_class_path = None
         if location_of_inheriting_class is not None:
@@ -144,14 +149,16 @@ class GitHubApp:
                 self._child_class_path = location_of_inheriting_class
         # Create an empty config file if one does not exist
         if not pathlib.Path.is_file(self._config_file_path):
-            open(self._config_file_path, 'a').close()
+            open(self._config_file_path, "a").close()
 
-    def initialize(self,
-            pem_file,
-            use_wiki=False,
-            ignore=False,
-            create_branch=False,
-            path_to_repo=None):
+    def initialize(
+        self,
+        pem_file,
+        use_wiki=False,
+        ignore=False,
+        create_branch=False,
+        path_to_repo=None,
+    ):
         """
         Sets basic properties of the app should be called before any other methods
 
@@ -169,8 +176,9 @@ class GitHubApp:
         """
         self._ignore = ignore
         self._use_wiki = use_wiki
-        self._repo_url = "https://api.github.com/repos/" + \
-            self._user + "/" + self._repo_name
+        self._repo_url = (
+            "https://api.github.com/repos/" + self._user + "/" + self._repo_name
+        )
         if isinstance(create_branch, list):
             self._create_branch = create_branch[0]
         else:
@@ -186,45 +194,64 @@ class GitHubApp:
             # Check that the repo specified is valid
             if os.path.isdir(path_to_repo):
                 # Check if we are overwriting an existing repo stored in the config file
-                with open(self._config_file_path, 'r') as file:
+                with open(self._config_file_path, "r") as file:
                     line = file.readline()
                     # Print a message if they are different
                     if line != path_to_repo:
                         self._log.info(
-                            "Changing repo path from {} to {}".format(line, path_to_repo))
+                            "Changing repo path from {} to {}".format(
+                                line, path_to_repo
+                            )
+                        )
 
-                with open(self._config_file_path, 'w') as file:
+                with open(self._config_file_path, "w") as file:
                     file.write(path_to_repo)
 
                 self._repo_path = path_to_repo
             else:
                 error_msg = "The suggested repository path is not valid:\n{}".format(
-                    path_to_repo)
+                    path_to_repo
+                )
                 self._log.error(error_msg)
                 raise
         else:
             if pathlib.Path.is_file(self._config_file_path):
 
-                with open(self._config_file_path, 'r') as file:
+                with open(self._config_file_path, "r") as file:
                     line = file.readline()
                     # Throw an error if the path is not valid
                     if not os.path.isdir(line):
-                        error_msg = "The cached path to your repository is " \
-                                "not valid: ({})".format(line)
-                        error_msg = error_msg + "\nThe config file is located at: ({})".format(self._config_file_path)
-                        error_msg = error_msg + "\nConsider initializing the app " + self._name + " with the path of "
+                        error_msg = (
+                            "The cached path to your repository is "
+                            "not valid: ({})".format(line)
+                        )
+                        error_msg = (
+                            error_msg
+                            + "\nThe config file is located at: ({})".format(
+                                self._config_file_path
+                            )
+                        )
+                        error_msg = (
+                            error_msg
+                            + "\nConsider initializing the app "
+                            + self._name
+                            + " with the path of "
+                        )
                         error_msg = error_msg + "repository it will be analyzing."
                         self._log.error(error_msg)
                     self._repo_path = line
             else:
                 # If no config file exists throw an error
-                error_msg = ("No repository path is known to the " + self._name + ".\n"
-                            "Please call --repository-path or -rp with the path the repository to register it.\n")
+                error_msg = (
+                    "No repository path is known to the " + self._name + ".\n"
+                    "Please call --repository-path or -rp with the path the repository to register it.\n"
+                )
                 self._log.error(error_msg)
                 raise
 
         self._app_wiki_dir = os.path.normpath(
-            self._repo_path + "/../" + self._repo_name + ".wiki")
+            self._repo_path + "/../" + self._repo_name + ".wiki"
+        )
         self._log.info(self._repo_name + " wiki dir is:")
         self._log.info(self._app_wiki_dir)
 
@@ -251,15 +278,15 @@ class GitHubApp:
         # iss is the app id
         # Ensuring that we request an access token that expires after a minute
         payload = {
-            'iat': datetime.datetime.utcnow(),
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(seconds=60),
-            'iss': self._app_id
+            "iat": datetime.datetime.utcnow(),
+            "exp": datetime.datetime.utcnow() + datetime.timedelta(seconds=60),
+            "iss": self._app_id,
         }
 
         PEM = None
         if pem_file == None:
             if "GITHUB_APP_PEM" in os.environ:
-                pem_file = os.environ.get('GITHUB_APP_PEM')
+                pem_file = os.environ.get("GITHUB_APP_PEM")
             else:
                 error_msg = "A pem file has not been specified and "
                 error_msg += "GITHUB_APP_PEM env varaible is not defined"
@@ -270,15 +297,17 @@ class GitHubApp:
         PEM = str(certs[0])
 
         if PEM is None:
-            error_msg = ("No permissions enabled for " + self._name + " app, "
-                        "either a pem file needs to be provided or the "
-                        "GITHUB_APP_PEM variable needs to be defined")
+            error_msg = (
+                "No permissions enabled for " + self._name + " app, "
+                "either a pem file needs to be provided or the "
+                "GITHUB_APP_PEM variable needs to be defined"
+            )
             raise Exception(error_msg)
 
-        self._jwt_token = jwt.encode(payload, PEM, algorithm='RS256')
+        self._jwt_token = jwt.encode(payload, PEM, algorithm="RS256")
         if isinstance(self._jwt_token, bytes):
             # Older versions of jwt return a byte string as opposed to a string
-            self._jwt_token = self._jwt_token.decode('utf-8')
+            self._jwt_token = self._jwt_token.decode("utf-8")
         print(type(self._jwt_token))
 
     def _PYCURL(self, header, url, option=None, custom_data=None):
@@ -302,14 +331,18 @@ class GitHubApp:
             c.setopt(c.PUT, 1)
 
         if custom_data is not None:
-            buffer_temp2 = BytesIO(json.dumps(custom_data).encode('utf-8'))
+            buffer_temp2 = BytesIO(json.dumps(custom_data).encode("utf-8"))
             c.setopt(c.READDATA, buffer_temp2)
 
         c.perform()
         code = c.getinfo(c.HTTP_CODE)
         c.close()
 
-        print("Buffer content from PYCURL command\n{}".format(json.loads(buffer_temp.getvalue())))
+        print(
+            "Buffer content from PYCURL command\n{}".format(
+                json.loads(buffer_temp.getvalue())
+            )
+        )
 
         return json.loads(buffer_temp.getvalue()), code
 
@@ -317,23 +350,22 @@ class GitHubApp:
         """
         Generate an installation id
 
-        This method will populate the installation id attribute using the 
+        This method will populate the installation id attribute using the
         internally stored json web token.
         """
         header = [
-            'Authorization: Bearer ' + str(self._jwt_token),
-            'Accept: ' + self._api_version
+            "Authorization: Bearer " + str(self._jwt_token),
+            "Accept: " + self._api_version,
         ]
 
-        js_obj, _ = self._PYCURL(
-            header, 'https://api.github.com/app/installations')
+        js_obj, _ = self._PYCURL(header, "https://api.github.com/app/installations")
 
         if isinstance(js_obj, list):
             js_obj = js_obj[0]
 
         # The installation id will be listed at the end of the url path
         print("Install id json obj {}".format(js_obj))
-        self._install_id = js_obj['html_url'].rsplit('/', 1)[-1]
+        self._install_id = js_obj["html_url"].rsplit("/", 1)[-1]
 
         print("Installation id is {}".format(self._install_id))
 
@@ -341,28 +373,31 @@ class GitHubApp:
         """
         Creates an access token
 
-        This method will populate the installation attribute using the 
-        installation id. The token is needed to authenticate any actions 
+        This method will populate the installation attribute using the
+        installation id. The token is needed to authenticate any actions
         run by the application.
         """
         header = [
-            'Authorization: Bearer ' + str(self._jwt_token),
-            'Accept: ' + self._api_version,
+            "Authorization: Bearer " + str(self._jwt_token),
+            "Accept: " + self._api_version,
         ]
 
-        https_url_access_tokens = "https://api.github.com/app/installations/" + \
-            self._install_id + "/access_tokens"
+        https_url_access_tokens = (
+            "https://api.github.com/app/installations/"
+            + self._install_id
+            + "/access_tokens"
+        )
 
         js_obj, _ = self._PYCURL(header, https_url_access_tokens, option="POST")
 
         if isinstance(js_obj, list):
             js_obj = js_obj[0]
 
-        self._access_token = js_obj['token']
+        self._access_token = js_obj["token"]
 
         self._header = [
-            'Authorization: token ' + str(self._access_token),
-            'Accept: ' + self._api_version,
+            "Authorization: token " + str(self._access_token),
+            "Accept: " + self._api_version,
         ]
 
     def _fillTree(self, current_node, branch):
@@ -375,15 +410,17 @@ class GitHubApp:
         nodes = current_node.nodes
         for node in nodes:
 
-            js_obj, _ = self._PYCURL(self._header,
-                                  self._repo_url + "/contents/" + node.path,
-                                  custom_data={"branch": branch})
+            js_obj, _ = self._PYCURL(
+                self._header,
+                self._repo_url + "/contents/" + node.path,
+                custom_data={"branch": branch},
+            )
 
             if isinstance(js_obj, list):
                 for ob in js_obj:
-                    node.insert(ob['name'], ob['type'])
+                    node.insert(ob["name"], ob["type"])
             else:
-                node.insert(js_obj['name'], js_obj['type'])
+                node.insert(js_obj["name"], js_obj["type"])
 
             self._fillTree(node, branch)
 
@@ -396,13 +433,15 @@ class GitHubApp:
         while page_found:
             page_found = False
             js_obj_list, _ = self._PYCURL(
-                self._header, self._repo_url + "/branches?page={}".format(page_index))
+                self._header, self._repo_url + "/branches?page={}".format(page_index)
+            )
             page_index = page_index + 1
             for js_obj in js_obj_list:
                 page_found = True
-                self._branches.append(js_obj['name'])
+                self._branches.append(js_obj["name"])
                 self._branch_current_commit_sha.update(
-                    {js_obj['name']: js_obj['commit']['sha']})
+                    {js_obj["name"]: js_obj["commit"]["sha"]}
+                )
 
     def generateCandidateRepoPath(self):
         """Generate a possible path to the repo
@@ -415,20 +454,20 @@ class GitHubApp:
         if self._child_class_path is not None:
             index = self._child_class_path.rfind(self._repo_name)
             if index != -1:
-                return self._child_class_path[0:index+len(self._repo_name)]
+                return self._child_class_path[0 : index + len(self._repo_name)]
         return None
 
     def getBranchMergingWith(self, branch):
         """Gets the name of the target branch of `branch` which it will merge with."""
         js_obj_list, _ = self._PYCURL(self._header, self._repo_url + "/pulls")
         self._log.info(
-            "Checking if branch is open as a pr and what branch it is targeted to merge with.\n")
+            "Checking if branch is open as a pr and what branch it is targeted to merge with.\n"
+        )
         self._log.info("Checking branch %s\n" % (self._user + ":" + branch))
         for js_obj in js_obj_list:
-            self._log.info("Found branch: %s.\n" %
-                           js_obj.get('head').get('label'))
-            if js_obj.get('head').get('label') == self._user + ":" + branch:
-                return js_obj.get('base').get('label').split(':', 1)[1]
+            self._log.info("Found branch: %s.\n" % js_obj.get("head").get("label"))
+            if js_obj.get("head").get("label") == self._user + ":" + branch:
+                return js_obj.get("base").get("label").split(":", 1)[1]
         return None
 
     # Public Methods
@@ -462,11 +501,11 @@ class GitHubApp:
         return branch in self.getBranches()
 
     def refreshBranchCache(self):
-        """"
+        """ "
         Method forces an update of the localy stored branch tree.
 
-        Will update regardless of whether the class already contains a 
-        local copy. Might be necessary if the remote github repository 
+        Will update regardless of whether the class already contains a
+        local copy. Might be necessary if the remote github repository
         is updated.
         """
         self._getBranches()
@@ -475,8 +514,8 @@ class GitHubApp:
         """
         Creates a git branch
 
-        Will create a branch if it does not already exists, if the branch 
-        does exist will do nothing. The new branch will be created by 
+        Will create a branch if it does not already exists, if the branch
+        does exist will do nothing. The new branch will be created by
         forking it of the latest commit of the default branch
         """
         if branch_to_fork_from is None:
@@ -485,23 +524,32 @@ class GitHubApp:
             return
 
         if not self.branchExist(branch_to_fork_from):
-            error_msg = "Cannot create new branch: " + branch + " from " + \
-                branch_to_fork_from + " because " + branch_to_fork_from + " does not exist."
+            error_msg = (
+                "Cannot create new branch: "
+                + branch
+                + " from "
+                + branch_to_fork_from
+                + " because "
+                + branch_to_fork_from
+                + " does not exist."
+            )
             raise Exception(error_msg)
 
         self._PYCURL(
             self._header,
-            self._repo_url + '/git/refs',
+            self._repo_url + "/git/refs",
             option="POST",
             custom_data={
                 "ref": "refs/heads/" + branch,
-                "sha": self._branch_current_commit_sha[branch_to_fork_from]})
+                "sha": self._branch_current_commit_sha[branch_to_fork_from],
+            },
+        )
 
     def getContents(self, branch=None):
         """
         Returns the contents of a branch
 
-        Returns the contents of a branch as a dictionary, where the key 
+        Returns the contents of a branch as a dictionary, where the key
         is the content and the value is the sha of the file/folder etc.
         """
         if branch is None:
@@ -509,14 +557,15 @@ class GitHubApp:
         # 1. Check if file exists if so get SHA
         js_obj, _ = self._PYCURL(
             self._header,
-            self._repo_url + '/contents?ref=' + branch,
-            custom_data={"branch": branch})
+            self._repo_url + "/contents?ref=" + branch,
+            custom_data={"branch": branch},
+        )
 
         contents = {}
         if isinstance(js_obj, list):
-                # Cycle through list to try to find the right object
+            # Cycle through list to try to find the right object
             for obj in js_obj:
-                contents[obj['name']] = obj['sha']
+                contents[obj["name"]] = obj["sha"]
 
         return contents
 
@@ -524,7 +573,7 @@ class GitHubApp:
         """
         This method attempts to upload a file to the specified branch.
 
-        If the file is found to already exist it will be updated. Image 
+        If the file is found to already exist it will be updated. Image
         files will by default be placed in a figures branch of the main
         repository, so as to not bloat the repositories commit history.
         """
@@ -536,13 +585,16 @@ class GitHubApp:
             file_name = file_name[0]
         if branch is None:
             branch = self._default_branch
-        if file_name.lower().endswith(('.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif')):
+        if file_name.lower().endswith(
+            (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
+        ):
             self._log.info("Image file detected")
             if branch != self._default_image_branch and not self._ignore:
                 self._log.warning(
-                    "Note all images will be uploaded to a branch named: " +
-                    self._default_image_branch +
-                    " in the main repository.")
+                    "Note all images will be uploaded to a branch named: "
+                    + self._default_image_branch
+                    + " in the main repository."
+                )
                 self._log.warning("Unless the ignore flag is used.")
                 branch = self._default_image_branch
                 branch_to_fork_from = "master"
@@ -550,21 +602,32 @@ class GitHubApp:
 
         if self._use_wiki or use_wiki:
             if branch != "master":
-                error_msg = "Files can only be uploaded to the wiki repositories master branch"
+                error_msg = (
+                    "Files can only be uploaded to the wiki repositories master branch"
+                )
                 raise Exception(error_msg)
 
-            if os.path.exists(self._app_wiki_dir + "/" +
-                              os.path.basename(os.path.normpath(file_name))):
+            if os.path.exists(
+                self._app_wiki_dir + "/" + os.path.basename(os.path.normpath(file_name))
+            ):
                 commit_msg = "Updating file " + file_name
             else:
                 commit_msg = "Adding file " + file_name
             repo = self.getWikiRepo(branch)
-            destination = self._app_wiki_dir + "/" + \
-                os.path.basename(os.path.normpath(file_name))
+            destination = (
+                self._app_wiki_dir + "/" + os.path.basename(os.path.normpath(file_name))
+            )
             if not filecmp.cmp(file_name, destination):
                 shutil.copy(file_name, destination)
-            repo.index.add([str(self._app_wiki_dir + "/" +
-                                os.path.basename(os.path.normpath(file_name)))])
+            repo.index.add(
+                [
+                    str(
+                        self._app_wiki_dir
+                        + "/"
+                        + os.path.basename(os.path.normpath(file_name))
+                    )
+                ]
+            )
             repo.index.commit(commit_msg)
             repo.git.push("--set-upstream", "origin", repo.head.reference)
             return
@@ -579,8 +642,10 @@ class GitHubApp:
 
         file_found = False
         if os.path.basename(os.path.normpath(file_name)) in contents:
-            self._log.warning("File (%s) already exists in branch:%s" %
-                              (os.path.basename(os.path.normpath(file_name)), branch))
+            self._log.warning(
+                "File (%s) already exists in branch:%s"
+                % (os.path.basename(os.path.normpath(file_name)), branch)
+            )
             file_found = True
 
         # 2. convert file into base64 format
@@ -591,26 +656,31 @@ class GitHubApp:
 
         # 3. upload the file, overwrite if exists already
         custom_data = {
-            'message': "%s %s file %s" % (self._name, "overwriting" if file_found else "uploading", os.path.basename(os.path.normpath(file_name))),
-            'name': self._name,
-            'branch': branch,
-            'content': encoded_file.decode('ascii')
+            "message": "%s %s file %s"
+            % (
+                self._name,
+                "overwriting" if file_found else "uploading",
+                os.path.basename(os.path.normpath(file_name)),
+            ),
+            "name": self._name,
+            "branch": branch,
+            "content": encoded_file.decode("ascii"),
         }
 
         if file_found:
-            custom_data['sha'] = contents[os.path.basename(
-                os.path.normpath(file_name))]
+            custom_data["sha"] = contents[os.path.basename(os.path.normpath(file_name))]
 
-        self._log.info("Uploading file (%s) to branch (%s)" %
-                       (os.path.basename(os.path.normpath(file_name)), branch))
-        https_url_to_file = self._repo_url + "/contents/" + \
-            os.path.basename(os.path.normpath(file_name))
+        self._log.info(
+            "Uploading file (%s) to branch (%s)"
+            % (os.path.basename(os.path.normpath(file_name)), branch)
+        )
+        https_url_to_file = (
+            self._repo_url
+            + "/contents/"
+            + os.path.basename(os.path.normpath(file_name))
+        )
 
-        self._PYCURL(
-            self._header,
-            https_url_to_file,
-            "PUT",
-            custom_data)
+        self._PYCURL(self._header, https_url_to_file, "PUT", custom_data)
 
     def getBranchTree(self, branch):
         """
@@ -621,13 +691,11 @@ class GitHubApp:
         """
         # 1. Check if file exists
         js_obj, _ = self._PYCURL(
-            self._header,
-            self._repo_url + "/contents",
-            "PUT",
-            {"branch": branch})
+            self._header, self._repo_url + "/contents", "PUT", {"branch": branch}
+        )
 
         for obj in js_obj:
-            self._parth_root.insert(obj['name'], obj['type'])
+            self._parth_root.insert(obj["name"], obj["type"])
 
         self._fillTree(self._parth_root, branch)
 
@@ -639,9 +707,15 @@ class GitHubApp:
         exist it will update the access permissions by updating the wiki
         remote url. The repository is then returned.
         """
-        wiki_remote = "https://x-access-token:" + \
-            str(self._access_token) + "@github.com/" + \
-            self._user + "/" + self._repo_name + ".wiki.git"
+        wiki_remote = (
+            "https://x-access-token:"
+            + str(self._access_token)
+            + "@github.com/"
+            + self._user
+            + "/"
+            + self._repo_name
+            + ".wiki.git"
+        )
         if not os.path.isdir(str(self._app_wiki_dir)):
             repo = Repo.clone_from(wiki_remote, self._app_wiki_dir)
         else:
@@ -649,12 +723,12 @@ class GitHubApp:
             g = git.cmd.Git(self._app_wiki_dir)
             self._log.info("Our remote url is %s" % wiki_remote)
             # git remote show origini
-            self._log.info(g.execute(['git', 'remote', 'show', 'origin']))
-            g.execute(['git', 'remote', 'set-url', 'origin', wiki_remote])
+            self._log.info(g.execute(["git", "remote", "show", "origin"]))
+            g.execute(["git", "remote", "set-url", "origin", wiki_remote])
             # Ensure local branches are synchronized with server
-            g.execute(['git', 'fetch'])
+            g.execute(["git", "fetch"])
             # Will not overwrite files but will reset the index to match with the remote
-            g.execute(['git', 'reset','--mixed','origin/master'])
+            g.execute(["git", "reset", "--mixed", "origin/master"])
 
         return repo
 
@@ -671,8 +745,9 @@ class GitHubApp:
         repo = self.cloneWikiRepo()
         return repo
 
-    def postStatus(self, state, commit_sha=None, context=None,
-                   description=None, target_url=None):
+    def postStatus(
+        self, state, commit_sha=None, context=None, description=None, target_url=None
+    ):
         if isinstance(state, list):
             state = state[0]
 
@@ -681,23 +756,23 @@ class GitHubApp:
         self._log.info("Posting context: %s" % context)
         self._log.info("Posting description: %s" % description)
         self._log.info("Posting url: %s" % target_url)
-        state_list = ['pending', 'failed', 'error', 'success']
+        state_list = ["pending", "failed", "error", "success"]
 
         if state not in state_list:
             raise Exception("Unrecognized state specified " + state)
         if commit_sha is None:
-            commit_sha = os.getenv('CI_COMMIT_SHA')
+            commit_sha = os.getenv("CI_COMMIT_SHA")
         if commit_sha is None:
-            commit_sha = os.getenv('TRAVIS_COMMIT')
+            commit_sha = os.getenv("TRAVIS_COMMIT")
         if commit_sha is None:
-            error_msg = 'CI_COMMIT_SHA and or TRAVIS_COMMIT not defined in '
-            error_msg = error_msg + 'environment cannot post status.'
+            error_msg = "CI_COMMIT_SHA and or TRAVIS_COMMIT not defined in "
+            error_msg = error_msg + "environment cannot post status."
             raise Exception(error_msg)
 
         if len(commit_sha) != 40:
-            error_msg = 'Unconventional commit sha encountered (' + str(commit_sha)
-            error_msg = error_msg + ') environment cannot post status. Sha '
-            error_msg = error_msg + 'should be 40 characters this one is '
+            error_msg = "Unconventional commit sha encountered (" + str(commit_sha)
+            error_msg = error_msg + ") environment cannot post status. Sha "
+            error_msg = error_msg + "should be 40 characters this one is "
             error_msg = error_msg + str(len(commit_sha))
             raise Exception(error_msg)
 
@@ -724,29 +799,31 @@ class GitHubApp:
 
         self._PYCURL(
             self._header,
-            self._repo_url + '/statuses/' + commit_sha,
+            self._repo_url + "/statuses/" + commit_sha,
             "POST",
-            custom_data_tmp)
+            custom_data_tmp,
+        )
 
-    
-    def getStatuses(self, commit_sha = None):
+    def getStatuses(self, commit_sha=None):
         """Get status of provided commit or commit has defined in the env vars."""
         if commit_sha is None:
-            commit_sha = os.getenv('CI_COMMIT_SHA')
+            commit_sha = os.getenv("CI_COMMIT_SHA")
         if commit_sha is None:
-            commit_sha = os.getenv('TRAVIS_COMMIT')
+            commit_sha = os.getenv("TRAVIS_COMMIT")
         if commit_sha is None:
-            error_msg = ("Commit sha not provided and CI_COMMIT_SHA and "
-                "TRAVIS_COMMIT not defined in environment cannot get status")
+            error_msg = (
+                "Commit sha not provided and CI_COMMIT_SHA and "
+                "TRAVIS_COMMIT not defined in environment cannot get status"
+            )
             raise Exception(error_msg)
 
         # 1. Check if file exists if so get SHA
         js_obj, code = self._PYCURL(
-            self._header,
-            self._repo_url + '/commits/' + str(commit_sha) + '/statuses')
+            self._header, self._repo_url + "/commits/" + str(commit_sha) + "/statuses"
+        )
         return js_obj, code, commit_sha
 
-    def getState(self, commit_sha = None, index=0):
+    def getState(self, commit_sha=None, index=0):
         """Get state of the provided commit at the provided index"""
         json_objs, code, commit_sha = self.getStatuses(commit_sha)
 
@@ -758,7 +835,7 @@ class GitHubApp:
 
         for count, json_obj in enumerate(json_objs):
             if count == index:
-                return json_obj['state'], code, commit_sha
+                return json_obj["state"], code, commit_sha
 
     def printStatus(self):
         js_obj = self.getStatus()
