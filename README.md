@@ -1,3 +1,5 @@
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/45bb7b1b4ae544ac9d442c110a37103d)](https://www.codacy.com/gh/lanl/Py-CGAD/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=lanl/Py-CGAD&amp;utm_campaign=Badge_Grade)
+
 # Py-CGAD
 
 Python Class for Github Application Development (Py-CGAD). This class is 
