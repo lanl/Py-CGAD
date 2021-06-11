@@ -36,6 +36,7 @@ setup(
     keywords="github, devops",
     packages=["py_cgad"],
     install_requires=[
+        "cryptography",
         "matplotlib",
         "numpy",
         "pyjwt",
