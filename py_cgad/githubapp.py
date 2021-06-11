@@ -829,7 +829,7 @@ class GitHubApp:
 
         if len(json_objs) <= index:
             error_msg = "Cannot get state of status at index {}".format(index)
-            error_msg += "\nThere are only a total of statuses {}".format(len(json_bjs))
+            error_msg += "\nThere are only a total of statuses {}".format(len(json_objs))
             error_msg += " at the provided commit ({})".format(commit_sha)
             raise Exception(error_msg)
 
