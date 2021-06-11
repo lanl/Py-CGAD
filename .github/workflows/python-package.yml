@@ -18,7 +18,7 @@ jobs:
       matrix:
         python-version: [3.7, 3.8, 3.9]
     env:
-      PYTHONPATH: ${{GITHUB_WORKSPACE}}/examples/PyCGADExample
+      PYTHONPATH: $GITHUB_WORKSPACE/examples/PyCGADExample
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
