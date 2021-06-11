@@ -17,7 +17,8 @@ jobs:
       fail-fast: false
       matrix:
         python-version: [3.7, 3.8, 3.9]
-
+    env:
+      PYTHONPATH: ${{GITHUB_WORKSPACE}}/examples/PyCGADExample
     steps:
     - uses: actions/checkout@v2
     - name: Set up Python ${{ matrix.python-version }}
@@ -41,6 +42,7 @@ jobs:
         git submodule update --init --recursive
     - name: Test with pytest
       run: |
+        echo $PYTHONPATH
         openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -in examples/pems/statusreportingapp.2021-06-11.private-key.pem.enc -out statusreportingapp.2021-06-11.private-key.pem -pass pass:${{secrets.PYCGAD_EXAMPLE1_TOKEN}} -d
         cd examples/PyCGADExample
         pytest
