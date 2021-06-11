@@ -9,4 +9,4 @@ jobs:
     - uses: JoshuaSBrown/cpp-py-formatter/check@v0.2.3
       with:
         clangFormatVersion: 8
-        token: ${{ secrets.TOKEN_GITHUB }}
+        token: ${{ secrets.GITHUB_TOKEN }}
