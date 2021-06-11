@@ -41,5 +41,6 @@ jobs:
         git submodule update --init --recursive
     - name: Test with pytest
       run: |
+        openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -in examples/pems/statusreportingapp.2021-06-11.private-key.pem.enc -out statusreportingapp.2021-06-11.private-key.pem -pass env:PYCGAD_EXAMPLE1_TOKEN -d
         cd examples/PyCGADExample
         pytest
