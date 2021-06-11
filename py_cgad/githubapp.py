@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import copy
 import os
 import logging
 import datetime
@@ -51,11 +52,12 @@ class Node:
         dir_name is the name of the directory the node contains information about
         rel_path is the actual path to the directory
         """
-        self.dir = dir_name
-        self.dirs = []
-        self.files = []
-        self.misc = []
-        self.rel_path = rel_path + dir_name
+        self._dir = dir_name
+        self._type = "dir"
+        self._dirs = []
+        self._files = []
+        self._misc = []
+        self._rel_path = rel_path + dir_name
 
     def insert(self, content, content_type):
         """
@@ -65,33 +67,106 @@ class Node:
         If the content type is of type dir than a new node is created.
         """
         if content_type == "dir":
-            self.dirs.append(Node(content, self.rel_path + "/"))
+            self._dirs.append(Node(content, self._rel_path + "/"))
         elif content_type == "file":
-            self.files.append(content)
+            self._files.append(content)
         else:
-            self.files.append(content)
+            self._files.append(content)
+
+    @property
+    def name(self):
+        return self._dir
 
     @property
     def nodes(self):
         """Returns a list of all nodes in the current node, which are essentially directories."""
-        return self.dirs
+        return self._dirs
+
+    def exist(self, path):
+        for fil in self._files:
+            if fil == path:
+                return True
+        for mis in self._misc:
+            if mis == path:
+                return True
+        for node in self._dirs:
+            if node.name == path:
+                return True
+            else:
+                new_path = copy.deepcopy(path)
+                new_path = "/".join(new_path.strip("/").strip('/')[1:]) 
+                return node.exist(new_path)
+        return False
+
+    def type(self, path):
+        for fil in self._files:
+            if fil == path:
+                return "file"
+        for mis in self._misc:
+            if mis == path:
+                return "misc"
+        for node in self._dirs:
+            if node.name == path:
+                return "dir"
+            else:
+                new_path = copy.deepcopy(path)
+                new_path = "/".join(new_path.strip("/").new_path('/')[1:]) 
+                return node.type(new_path)
+        return None
 
     @property
     def path(self):
         """Get the relative path of the current node."""
-        return self.rel_path
+        return self._rel_path
+
+    def __str__(self):
+        """Get contents of node and all child nodes as a string."""
+        return self._buildStr()
+
+    def _buildStr(self, indent = ""):
+        """Contents in string format indenting with each folder."""
+        content_string =""
+        for fil in self._files:
+            content_string += indent + "file " + fil + "\n"
+        for mis in self._misc:
+            content_string += indent + "misc " + mis + "\n"
+        for node in self._dirs:
+            content_string += indent + "dir  " + node.name + "\n"
+            content_string += node._buildStr(indent + "  ")
+        return content_string
+
+    def _findRelPaths(self, current_path, obj_name):
+        """Contents in string format indenting with each folder."""
+        rel_paths = []
+        for fil in self._files:
+            if fil == obj_name:
+                rel_paths.append(current_path + "/" + obj_name)
+        for mis in self._misc:
+            if mis == obj_name:
+                rel_paths.append(current_path + "/" + obj_name)
+        for node in self._dirs:
+            if node.name == obj_name:
+                rel_paths.append(current_path + "/" + obj_name)
+            potential_paths = node._findRelPaths(
+                        current_path + "/" + node.name, obj_name
+                        )
+            rel_paths += potential_paths
+        return rel_paths
 
     @property
     def print(self):
         """Print contents of node and all child nodes."""
-        self._log.info("Contents in folder: " + self.rel_path)
-        for fil in self.files:
-            self._log.info("File " + fil)
-        for mis in self.misc:
-            self._log.info("Misc " + mis)
-        for node in self.dirs:
+        print("Contents in folder: " + self.rel_path)
+        for fil in self._files:
+            print("file " + fil)
+        for mis in self._misc:
+            print("misc " + mis)
+        for node in self._dirs:
             node.print
 
+    def getRelativePaths(self, obj_name):
+        """Get the path(s) to the object"""
+        return self._findRelPaths(".", obj_name)
 
 class GitHubApp:
 
@@ -188,7 +263,7 @@ class GitHubApp:
         self._branches = []
         self._branch_current_commit_sha = {}
         self._api_version = "application/vnd.github.v3+json"
-        self._parth_root = Node()
+        self._repo_root = Node()
 
         if path_to_repo is not None:
             # Check that the repo specified is valid
@@ -364,10 +439,8 @@ class GitHubApp:
             js_obj = js_obj[0]
 
         # The installation id will be listed at the end of the url path
-        print("Install id json obj {}".format(js_obj))
         self._install_id = js_obj["html_url"].rsplit("/", 1)[-1]
 
-        print("Installation id is {}".format(self._install_id))
 
     def _generateAccessToken(self):
         """
@@ -550,7 +623,8 @@ class GitHubApp:
         Returns the contents of a branch
 
         Returns the contents of a branch as a dictionary, where the key
-        is the content and the value is the sha of the file/folder etc.
+        is the content path and the value is a list of the file folder name
+        and the sha of the file/folder etc.
         """
         if branch is None:
             branch = self._default_branch
@@ -562,10 +636,13 @@ class GitHubApp:
         )
 
         contents = {}
+        print("\n\nJSON DUMPS\n")
+        print(json.dumps(js_obj,indent=4))
+        print("\n")
         if isinstance(js_obj, list):
             # Cycle through list to try to find the right object
             for obj in js_obj:
-                contents[obj["name"]] = obj["sha"]
+                contents[obj["path"]] = [obj["name"],  obj["sha"]]
 
         return contents
 
@@ -688,16 +765,38 @@ class GitHubApp:
 
         Method will grab the contents of the specified branch from the
         remote repository. It will return the contents as a tree object.
+
+        The tree object provides some basic functionality such as indicating
+        the content type
         """
-        # 1. Check if file exists
+        # 1. Check if branch exists
         js_obj, _ = self._PYCURL(
-            self._header, self._repo_url + "/contents", "PUT", {"branch": branch}
+            self._header, self._repo_url + "/branches", "GET"
         )
+       
+        print("JS obj is")
+        print(js_obj)
 
         for obj in js_obj:
-            self._parth_root.insert(obj["name"], obj["type"])
+            if obj["name"] == branch:
 
-        self._fillTree(self._parth_root, branch)
+                # Get the top level directory structure
+                js_obj2, _ = self._PYCURL(
+                    self._header,
+                    self._repo_url + "/contents?ref=" + branch,
+                    custom_data={"branch": branch},
+                )
+            
+                for obj2 in js_obj2:
+                    self._repo_root.insert(obj2["name"], obj2["type"])
+
+                self._fillTree(self._repo_root, branch)
+                #print("Object is\n")
+                #print(obj)
+                #print("\n\n")
+                return self._repo_root
+
+        raise Exception("Branch missing from repository {}".format(branch))
 
     def cloneWikiRepo(self):
         """
