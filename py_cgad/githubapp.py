@@ -94,7 +94,7 @@ class Node:
                 return True
             else:
                 new_path = copy.deepcopy(path)
-                new_path = "/".join(new_path.strip("/").strip('/')[1:]) 
+                new_path = "/".join(new_path.strip("/").strip("/")[1:])
                 return node.exist(new_path)
         return False
 
@@ -110,7 +110,7 @@ class Node:
                 return "dir"
             else:
                 new_path = copy.deepcopy(path)
-                new_path = "/".join(new_path.strip("/").new_path('/')[1:]) 
+                new_path = "/".join(new_path.strip("/").new_path("/")[1:])
                 return node.type(new_path)
         return None
 
@@ -123,9 +123,9 @@ class Node:
         """Get contents of node and all child nodes as a string."""
         return self._buildStr()
 
-    def _buildStr(self, indent = ""):
+    def _buildStr(self, indent=""):
         """Contents in string format indenting with each folder."""
-        content_string =""
+        content_string = ""
         for fil in self._files:
             content_string += indent + "file " + fil + "\n"
         for mis in self._misc:
@@ -148,8 +148,8 @@ class Node:
             if node.name == obj_name:
                 rel_paths.append(current_path + "/" + obj_name)
             potential_paths = node._findRelPaths(
-                        current_path + "/" + node.name, obj_name
-                        )
+                current_path + "/" + node.name, obj_name
+            )
             rel_paths += potential_paths
         return rel_paths
 
@@ -167,6 +167,7 @@ class Node:
     def getRelativePaths(self, obj_name):
         """Get the path(s) to the object"""
         return self._findRelPaths(".", obj_name)
+
 
 class GitHubApp:
 
@@ -441,7 +442,6 @@ class GitHubApp:
         # The installation id will be listed at the end of the url path
         self._install_id = js_obj["html_url"].rsplit("/", 1)[-1]
 
-
     def _generateAccessToken(self):
         """
         Creates an access token
@@ -637,12 +637,12 @@ class GitHubApp:
 
         contents = {}
         print("\n\nJSON DUMPS\n")
-        print(json.dumps(js_obj,indent=4))
+        print(json.dumps(js_obj, indent=4))
         print("\n")
         if isinstance(js_obj, list):
             # Cycle through list to try to find the right object
             for obj in js_obj:
-                contents[obj["path"]] = [obj["name"],  obj["sha"]]
+                contents[obj["path"]] = [obj["name"], obj["sha"]]
 
         return contents
 
@@ -770,10 +770,8 @@ class GitHubApp:
         the content type
         """
         # 1. Check if branch exists
-        js_obj, _ = self._PYCURL(
-            self._header, self._repo_url + "/branches", "GET"
-        )
-       
+        js_obj, _ = self._PYCURL(self._header, self._repo_url + "/branches", "GET")
+
         print("JS obj is")
         print(js_obj)
 
@@ -786,14 +784,14 @@ class GitHubApp:
                     self._repo_url + "/contents?ref=" + branch,
                     custom_data={"branch": branch},
                 )
-            
+
                 for obj2 in js_obj2:
                     self._repo_root.insert(obj2["name"], obj2["type"])
 
                 self._fillTree(self._repo_root, branch)
-                #print("Object is\n")
-                #print(obj)
-                #print("\n\n")
+                # print("Object is\n")
+                # print(obj)
+                # print("\n\n")
                 return self._repo_root
 
         raise Exception("Branch missing from repository {}".format(branch))
