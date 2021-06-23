@@ -45,7 +45,7 @@ def urlIsValid(candidate_url):
 
 
 class Node:
-    def __init__(self, dir_name="", rel_path=""):
+    def __init__(self, dir_name="", rel_path=".", dir_sha = None):
         """
         Creating a Node object
 
@@ -53,13 +53,16 @@ class Node:
         rel_path is the actual path to the directory
         """
         self._dir = dir_name
+        self._dir_sha = dir_sha
         self._type = "dir"
         self._dirs = []
         self._files = []
+        self._files_sha = {}
         self._misc = []
+        self._misc_sha = {}
         self._rel_path = rel_path + dir_name
 
-    def insert(self, content, content_type):
+    def insert(self, content, content_type, content_sha=None):
         """
         Record the contents of a directory by inserting it
 
@@ -67,15 +70,33 @@ class Node:
         If the content type is of type dir than a new node is created.
         """
         if content_type == "dir":
-            self._dirs.append(Node(content, self._rel_path + "/"))
+            self._dirs.append(Node(content, self._rel_path + "/", content_sha))
         elif content_type == "file":
             self._files.append(content)
+            self._files_sha[content] = content_sha
         else:
-            self._files.append(content)
+            self._misc.append(content)
+            self._misc_sha[content] = content_sha
 
     @property
     def name(self):
         return self._dir
+
+    @property
+    def sha(self):
+        return self._dir_sha
+
+    @property
+    def relative_path(self):
+        return self._rel_path
+
+    @property
+    def files(self):
+        return self._files
+
+    @property
+    def miscellaneous(self):
+        return self._misc
 
     @property
     def nodes(self):
@@ -97,6 +118,23 @@ class Node:
                 new_path = "/".join(new_path.strip("/").strip('/')[1:]) 
                 return node.exist(new_path)
         return False
+
+    def sha(self, path):
+        for fil in self._files:
+            if fil == path:
+                return self._files_sha[fil]
+        for mis in self._misc:
+            if mis == path:
+                return self._misc_sha[fil]
+        for node in self._dirs:
+            if node.name == path:
+                return self._dirs_sha
+            else:
+                new_path = copy.deepcopy(path)
+                new_path = "/".join(new_path.strip("/").new_path('/')[1:]) 
+                return node.type(new_path)
+        return None
+
 
     def type(self, path):
         for fil in self._files:
@@ -491,9 +529,14 @@ class GitHubApp:
 
             if isinstance(js_obj, list):
                 for ob in js_obj:
-                    node.insert(ob["name"], ob["type"])
+                    if ob["type"] == "dir":
+                        print("\n\nDIRECTORY\n")
+                        print(ob)
+                        print("sha")
+                        print(ob["sha"])
+                    node.insert(ob["name"], ob["type"], ob["sha"])
             else:
-                node.insert(js_obj["name"], js_obj["type"])
+                node.insert(js_obj["name"], js_obj["type"], js_obj["sha"])
 
             self._fillTree(node, branch)
 
@@ -618,6 +661,26 @@ class GitHubApp:
             },
         )
 
+    def _generateContent(self, head):
+        contents = {}
+        print("\n\n******************************************************")
+        print("Head name")
+        print(head.name)
+
+        dir_path = head.relative_path
+        for file_name in head.files:
+            contents[dir_path + "/" + file_name] = [file_name, head.sha(file_name)]
+#        print("\n\nJSON DUMPS\n")
+        for misc_name in head.miscellaneous:
+            contents[dir_path + "/" + misc_name] = [misc_name, head.sha(misc_name)]
+        for node in head.nodes:
+            node_content = self._generateContent(node)
+            contents[dir_path + "/" + node.name] = [node.name, node.sha] 
+            contents.update(node_content)
+        print("Contents are")
+        print(contents)
+        return contents
+
     def getContents(self, branch=None):
         """
         Returns the contents of a branch
@@ -626,25 +689,8 @@ class GitHubApp:
         is the content path and the value is a list of the file folder name
         and the sha of the file/folder etc.
         """
-        if branch is None:
-            branch = self._default_branch
-        # 1. Check if file exists if so get SHA
-        js_obj, _ = self._PYCURL(
-            self._header,
-            self._repo_url + "/contents?ref=" + branch,
-            custom_data={"branch": branch},
-        )
-
-        contents = {}
-        print("\n\nJSON DUMPS\n")
-        print(json.dumps(js_obj,indent=4))
-        print("\n")
-        if isinstance(js_obj, list):
-            # Cycle through list to try to find the right object
-            for obj in js_obj:
-                contents[obj["path"]] = [obj["name"],  obj["sha"]]
-
-        return contents
+        branch_tree = self.getBranchTree(branch)
+        return self._generateContent(branch_tree)
 
     def upload(self, file_name, branch=None, use_wiki=False):
         """
@@ -759,7 +805,7 @@ class GitHubApp:
 
         self._PYCURL(self._header, https_url_to_file, "PUT", custom_data)
 
-    def getBranchTree(self, branch):
+    def getBranchTree(self, branch = None):
         """
         Gets the contents of a branch as a tree
 
@@ -788,12 +834,12 @@ class GitHubApp:
                 )
             
                 for obj2 in js_obj2:
-                    self._repo_root.insert(obj2["name"], obj2["type"])
+                    self._repo_root.insert(obj2["name"], obj2["type"], obj2["sha"])
 
                 self._fillTree(self._repo_root, branch)
-                #print("Object is\n")
-                #print(obj)
-                #print("\n\n")
+                print("Object is\n")
+                print(json.dumps(obj,indent=4))
+                print("\n\n")
                 return self._repo_root
 
         raise Exception("Branch missing from repository {}".format(branch))
