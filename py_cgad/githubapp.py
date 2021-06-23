@@ -479,6 +479,11 @@ class GitHubApp:
         if not pathlib.Path.is_file(self._config_file_path):
             open(self._config_file_path, "a").close()
 
+    @property
+    def name(self):
+        """Returns the name of the app."""
+        return self._name
+
     def initialize(
         self,
         pem_file,
@@ -656,6 +661,10 @@ class GitHubApp:
             c.setopt(c.POSTFIELDSIZE, len(json.dumps(custom_data)))
         elif option == "PUT":
             c.setopt(c.PUT, 1)
+        elif option == "DELETE":
+            c.setopt(c.CUSTOMREQUEST,"DELETE")
+            c.setopt(c.POSTFIELDS, json.dumps(custom_data))
+            c.setopt(c.POSTFIELDSIZE, len(json.dumps(custom_data)))
 
         if custom_data is not None:
             buffer_temp2 = BytesIO(json.dumps(custom_data).encode("utf-8"))
@@ -816,7 +825,7 @@ class GitHubApp:
         This method will determine if a branch exists on the github repository by pinging the
         github api.
         """
-        return branch in self.getBranches()
+        return branch in self.branches
 
     def refreshBranchCache(self):
         """ "
@@ -888,14 +897,48 @@ class GitHubApp:
         branch_tree = self.getBranchTree(branch)
         return self._generateContent(branch_tree)
 
-    def remove(self, file_name_path, branch=None, use_wiki=False):
+    def remove(self, file_name_path, branch=None, file_sha = None, use_wiki=False):
         """
         This method will remove a file from the listed branch.
 
         Provide the file name and path with respect to the repository root.
         """
+        if branch is None:
+            branch = "master"
         # First check that the file exists in the repository
-        
+        branch_tree = self.getBranchTree(branch)
+        # Only remove if the file actually exists
+        if branch_tree.exists(file_name_path):
+
+            if file_sha is None:
+                # Attempt to get it from the branch tree
+                file_sha = branch_tree.getSha(file_name_path)
+                if file_sha is None:
+                    error_msg = "Unable to remove existing file: "
+                    error_msg += "{}, sha is unknown.".format(file_name_path)
+                    raise Exception(error_msg)
+
+            if file_name_path.startswith("/"):
+                file_name_path = file_name_path[1:]
+            elif file_name_path.startswith("./"):
+                file_name_path = file_name_path[2:]
+
+            message = self._name + " is removing {}".format(file_name_path)   
+
+            js_obj, _ = self._PYCURL(
+                    self._header,
+                    self._repo_url + "/contents/" + file_name_path,
+                    "DELETE",
+                    custom_data={
+                            "branch": branch,
+                            "sha": file_sha,
+                            "message": message,
+                            "committer": self._name
+                        }
+                    )
+
+   
+
 
 
     def upload(self, file_name, branch=None, use_wiki=False):
