@@ -1169,7 +1169,7 @@ class GitHubApp:
             self._header,
             self._repo_url + "/statuses/" + commit_sha,
             option="POST",
-            custom_data=custom_data_tmp
+            custom_data=custom_data_tmp,
         )
 
     def getStatuses(self, commit_sha=None):
