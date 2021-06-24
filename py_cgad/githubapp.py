@@ -211,7 +211,7 @@ class Node:
             else:
                 new_path = copy.deepcopy(path)
                 new_path = "/".join(new_path.strip("/").new_path('/')[1:]) 
-                return node.sha(new_path)
+                return node.getSha(new_path)
         return None
 
     def insert(self, content_path, content_type, content_sha=None):
@@ -392,7 +392,7 @@ class Node:
     @property
     def print(self):
         """Print contents of node and all child nodes."""
-        print("Contents in folder: " + self.rel_path)
+        print("Contents in folder: " + self._rel_path)
         for fil in self._files:
             print("file " + fil)
         for mis in self._misc:
@@ -877,9 +877,9 @@ class GitHubApp:
 
         dir_path = head.relative_path
         for file_name in head.files:
-            contents[dir_path + "/" + file_name] = [file_name, head.sha(file_name)]
+            contents[dir_path + "/" + file_name] = [file_name, head.getSha(file_name)]
         for misc_name in head.miscellaneous:
-            contents[dir_path + "/" + misc_name] = [misc_name, head.sha(misc_name)]
+            contents[dir_path + "/" + misc_name] = [misc_name, head.getSha(misc_name)]
         for node in head.nodes:
             node_content = self._generateContent(node)
             contents[dir_path + "/" + node.name] = [node.name, node.sha] 
@@ -933,13 +933,8 @@ class GitHubApp:
                             "branch": branch,
                             "sha": file_sha,
                             "message": message,
-                            "committer": self._name
-                        }
+                        },
                     )
-
-   
-
-
 
     def upload(self, file_name, branch=None, use_wiki=False):
         """
