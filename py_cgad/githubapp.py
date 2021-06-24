@@ -918,7 +918,7 @@ class GitHubApp:
 
             message = self._name + " is removing {}".format(file_name_path)
 
-            js_obj, _ = self._PYCURL(
+            self._PYCURL(
                 self._header,
                 self._repo_url + "/contents/" + file_name_path,
                 "DELETE",
