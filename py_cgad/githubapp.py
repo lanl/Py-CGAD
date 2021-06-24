@@ -257,12 +257,12 @@ class Node:
 
     @property
     def files(self):
-        """Returns non miscellaneous content and non folders"""
+        """Returns non miscellaneous content and non folders."""
         return self._files
 
     @property
     def miscellaneous(self):
-        """Returns miscellaneous content e.g. image files"""
+        """Returns miscellaneous content e.g. image files."""
         return self._misc
 
     @property
