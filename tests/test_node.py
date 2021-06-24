@@ -1,4 +1,3 @@
-
 from py_cgad.githubapp import Node
 
 
