@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import copy
 import os
 import logging
 import datetime
@@ -44,53 +45,374 @@ def urlIsValid(candidate_url):
 
 
 class Node:
-    def __init__(self, dir_name="", rel_path=""):
+    def __init__(self, dir_name="", rel_path=".", dir_sha=None):
         """
         Creating a Node object
 
-        dir_name is the name of the directory the node contains information about
-        rel_path is the actual path to the directory
-        """
-        self.dir = dir_name
-        self.dirs = []
-        self.files = []
-        self.misc = []
-        self.rel_path = rel_path + dir_name
+        dir_name is the name of the directory the node contains information
+        about rel_path is the actual path to the directory.
 
-    def insert(self, content, content_type):
+        The root node of a repository should be created by simply calling:
+
+        root_node = Node()
+
+        """
+        self._dir = dir_name
+        self._dir_sha = dir_sha
+        self._type = "dir"
+        self._dirs = []
+        self._files = []
+        self._files_sha = {}
+        self._misc = []
+        self._misc_sha = {}
+        self._rel_path = rel_path + dir_name
+
+    def __getFilePaths(self, current_path):
+        """Returns the full paths to the files in the current folder."""
+        rel_paths = []
+        for fil in self._files:
+            if current_path.endswith("/"):
+                rel_paths.append(current_path + fil)
+            else:
+                rel_paths.append(current_path + "/" + fil)
+        return rel_paths
+
+    def __getMiscPaths(self, current_path):
+        """Returns the full paths to the misc content in the current folder."""
+        rel_paths = []
+        for mis in self._misc:
+            if current_path.endswith("/"):
+                rel_paths.append(current_path + mis)
+            else:
+                rel_paths.append(current_path + "/" + mis)
+        return rel_paths
+
+    def __getDirPaths(self, current_path):
+        rel_paths = []
+        for node in self._dirs:
+            if node.name[0] == "/":
+                if current_path[-1] == "/":
+                    rel_paths.append(current_path + node.name[1:])
+                else:
+                    rel_paths.append(current_path + node.name)
+            elif current_path[-1] == "/":
+                rel_paths.append(current_path + node.name)
+            else:
+                rel_paths.append(current_path + "/" + node.name)
+        return rel_paths
+
+    def __exists(self, current_path, path_to_obj):
+        for fil in self.__getFilePaths(current_path):
+            if fil == path_to_obj:
+                return True
+        for mis in self.__getMiscPaths(current_path):
+            if mis == path_to_obj:
+                return True
+        for dir_path in self.__getDirPaths(current_path):
+            if dir_path == path_to_obj:
+                return True
+        for node in self._dirs:
+            if current_path.endswith("/"):
+                if node.__exists(current_path + node.name, path_to_obj):
+                    return True
+            else:
+                if node.__exists(current_path + "/" + node.name, path_to_obj):
+                    return True
+        return False
+
+    def __type(self, path):
+        for fil in self._files:
+            if fil == path:
+                return "file"
+        for mis in self._misc:
+            if mis == path:
+                return "misc"
+        for node in self._dirs:
+            if path.count("/") == 0:
+                if node.name == path:
+                    return "dir"
+            else:
+                new_path = path.split("/")[1][0:]
+                return node.__type(new_path)
+        return None
+
+    def __insert(self, current_path, content_path, content_type, content_sha):
+
+        # Check if content_path contains folders
+        sub_dir = None
+        if content_path.startswith("./"):
+            if content_path.count("/") > 1:
+                # Ignore the first ./ so grab [1]
+                sub_dir = content_path.split("/")[1]
+                new_content_path = content_path.split(sub_dir)[1][1:]
+        elif content_path.startswith("/"):
+            if content_path.count("/") > 1:
+                # Ignore the first / so grab [1]
+                sub_dir = content_path.split("/")[1]
+                new_content_path = content_path.split(sub_dir)[1][1:]
+        elif content_path.count("/") > 0:
+            sub_dir = content_path.split("/")[0]
+            new_content_path = content_path.split(sub_dir)[1][0:]
+
+        if sub_dir is not None:
+            # Check if the directory has already been created
+            found = False
+            for node in self.nodes:
+                if sub_dir == node.name:
+                    found = True
+                    node.__insert(
+                        current_path + "/" + node.name,
+                        new_content_path,
+                        content_type,
+                        content_sha,
+                    )
+            if not found:
+                # Throw an error
+                error_msg = "Cannot add content, missing sub folders.\n"
+                error_msg += "content_path: " + content_path + "\n"
+                raise Exception(error_msg)
+
+        else:
+            if content_type == "dir":
+                if content_path.startswith("./"):
+                    content_name = content_path[2:]
+                elif content_path.startswith("/"):
+                    content_name = content_path[1:]
+                else:
+                    content_name = content_path
+                self._dirs.append(Node(content_name, self._rel_path + "/", content_sha))
+
+            elif content_type == "file":
+                self._files.append(content_path)
+                self._files_sha[content_path] = content_sha
+            else:
+                self._misc.append(content_path)
+                self._misc_sha[content_path] = content_sha
+
+    def __sha(self, path):
+        """
+        Will return the sha of the file object or None if sha is not found.
+
+        This is true with exception to the root directory which does not
+        have a sha associated with it, and so it will also return None.
+        """
+        for fil in self._files:
+            if fil == path:
+                return self._files_sha[fil]
+        for mis in self._misc:
+            if mis == path:
+                return self._misc_sha[fil]
+        for node in self._dirs:
+            if node.name == path:
+                return self._dir_sha
+            else:
+                new_path = copy.deepcopy(path)
+                new_path = "/".join(new_path.strip("/").new_path("/")[1:])
+                return node.getSha(new_path)
+        return None
+
+    def insert(self, content_path, content_type, content_sha=None):
         """
         Record the contents of a directory by inserting it
 
         Will either store new information as a file, directory or misc type.
         If the content type is of type dir than a new node is created.
         """
-        if content_type == "dir":
-            self.dirs.append(Node(content, self.rel_path + "/"))
-        elif content_type == "file":
-            self.files.append(content)
-        else:
-            self.files.append(content)
+        if not any(content_type in obj_name for obj_name in ["dir", "misc", "file"]):
+            error_msg = "Unknown content type specified, allowed types are:\n"
+            error_msg += "dir, misc, file\n"
+            error_msg += "\ncontent_path: " + content_path
+            error_msg += "\ncontent_type: " + content_type
+            error_msg += "\ncontent_sha: " + content_sha
+            raise Exception(error_msg)
+
+        if any(content_path == obj_name for obj_name in ["", ".", "./"]):
+            error_msg = "No content specified.\n"
+            error_msg += "\ncontent_path: " + content_path
+            error_msg += "\ncontent_type: " + content_type
+            error_msg += "\ncontent_sha: " + content_sha
+            raise Exception(error_msg)
+
+        if content_sha is not None:
+            if len(content_sha) != 40:
+                error_msg = "sha must be contain 40 characters.\n"
+                error_msg += "\ncontent_path: " + content_path
+                error_msg += "\ncontent_type: " + content_type
+                error_msg += "\ncontent_sha: " + content_sha
+                raise Exception(error_msg)
+
+        self.__insert("./", content_path, content_type, content_sha)
+
+    @property
+    def name(self):
+        return self._dir
+
+    @property
+    def sha(self):
+        return self._dir_sha
+
+    @property
+    def relative_path(self):
+        return self._rel_path
+
+    @property
+    def files(self):
+        """Returns non miscellaneous content and non folders."""
+        return self._files
+
+    @property
+    def miscellaneous(self):
+        """Returns miscellaneous content e.g. image files."""
+        return self._misc
 
     @property
     def nodes(self):
-        """Returns a list of all nodes in the current node, which are essentially directories."""
-        return self.dirs
+        """
+        Returns a list of all nodes in the current node.
+
+        This will essentially be the directories.
+        """
+        return self._dirs
+
+    def exists(self, path_to_obj):
+        """
+        Checks to see if a file object exists.
+
+        Path should be the full path to the object. e.g.
+
+        ./bin
+        ./tests/test_unit.py
+        ./image.png
+
+        If the "./" are ommitted from the path it will be assumed that the
+        file objects are in reference to the root path e.g. if
+
+        bin
+        tests/test_unit.py
+
+        are passed in "./" will be prepended to the path.
+        """
+        # Check to see if path_to_obj is root node
+        if path_to_obj == "." or path_to_obj == "./" or path_to_obj == "":
+            return True
+
+        if not path_to_obj.startswith("./"):
+            if path_to_obj[0] == "/":
+                path_to_obj = "." + path_to_obj
+            else:
+                path_to_obj = "./" + path_to_obj
+
+        return self.__exists("./", path_to_obj)
+
+    def getSha(self, path):
+        """
+        Will return the sha of the file object or None if sha is not found.
+
+        This is true with exception to the root directory which does not
+        have a sha associated with it, and so it will also return None.
+        """
+        if path.startswith("./"):
+            if len(path) > 2:
+                path = path[2:]
+        if path.startswith("/"):
+            if len(path) > 1:
+                path = path[1:]
+
+        for fil in self._files:
+            if fil == path:
+                return self._files_sha[fil]
+        for mis in self._misc:
+            if mis == path:
+                return self._misc_sha[mis]
+        for node in self._dirs:
+            if node.name == path:
+                return node._dir_sha
+        for node in self._dirs:
+            # Remove the dir1/ from dir1/dir2
+            if path.startswith(node.name + "/"):
+                new_path = path.split("/")[1][0:]
+                found_sha = node.getSha(new_path)
+
+                if found_sha is not None:
+                    return found_sha
+        return None
+
+    def type(self, path):
+        if path == "" or path == "." or path == "./":
+            return "dir"
+        return self.__type(path)
 
     @property
     def path(self):
         """Get the relative path of the current node."""
-        return self.rel_path
+        return self._rel_path
+
+    def __str__(self):
+        """Get contents of node and all child nodes as a string."""
+        return self._buildStr()
+
+    def _buildStr(self, indent=""):
+        """Contents in string format indenting with each folder."""
+        content_string = ""
+        for fil in self._files:
+            content_string += indent + "file " + fil + "\n"
+        for mis in self._misc:
+            content_string += indent + "misc " + mis + "\n"
+        for node in self._dirs:
+            content_string += indent + "dir  " + node.name + "\n"
+            content_string += node._buildStr(indent + "  ")
+        return content_string
+
+    def _findRelPaths(self, current_path, obj_name):
+        """Contents in string format indenting with each folder."""
+        rel_paths = []
+        for fil in self.__getFilePaths(current_path):
+            if fil.endswith(obj_name):
+                rel_paths.append(fil)
+        for mis in self.__getMiscPaths(current_path):
+            if mis.endswith(obj_name):
+                rel_paths.append(mis)
+        for dir_path in self.__getDirPaths(current_path):
+            if dir_path.endswith(obj_name):
+                rel_paths.append(dir_path)
+
+        for node in self._dirs:
+            potential_paths = node._findRelPaths(
+                current_path + "/" + node.name, obj_name
+            )
+            rel_paths += potential_paths
+        return rel_paths
 
     @property
     def print(self):
         """Print contents of node and all child nodes."""
-        self._log.info("Contents in folder: " + self.rel_path)
-        for fil in self.files:
-            self._log.info("File " + fil)
-        for mis in self.misc:
-            self._log.info("Misc " + mis)
-        for node in self.dirs:
+        print("Contents in folder: " + self._rel_path)
+        for fil in self._files:
+            print("file " + fil)
+        for mis in self._misc:
+            print("misc " + mis)
+        for node in self._dirs:
             node.print
+
+    def getRelativePaths(self, obj_name):
+        """
+        Get the path(s) to the object.
+
+        In the case that an object exists in the directory tree but we don't
+        know the path we can try to find it in the tree. E.g. if we are
+        searching for 'common.py' and our directory structure actually has
+        two instances:
+
+        ./bin/common.py
+        ./lib/file1.py
+        ./common.py
+        ./file2.py
+
+        A list will be returned with the relative paths:
+
+        ["./bin/common.py", "./common.py"]
+        """
+        return self._findRelPaths(".", obj_name)
 
 
 class GitHubApp:
@@ -151,6 +473,11 @@ class GitHubApp:
         if not pathlib.Path.is_file(self._config_file_path):
             open(self._config_file_path, "a").close()
 
+    @property
+    def name(self):
+        """Returns the name of the app."""
+        return self._name
+
     def initialize(
         self,
         pem_file,
@@ -188,7 +515,7 @@ class GitHubApp:
         self._branches = []
         self._branch_current_commit_sha = {}
         self._api_version = "application/vnd.github.v3+json"
-        self._parth_root = Node()
+        self._repo_root = Node()
 
         if path_to_repo is not None:
             # Check that the repo specified is valid
@@ -308,14 +635,8 @@ class GitHubApp:
         if isinstance(self._jwt_token, bytes):
             # Older versions of jwt return a byte string as opposed to a string
             self._jwt_token = self._jwt_token.decode("utf-8")
-        print(type(self._jwt_token))
 
     def _PYCURL(self, header, url, option=None, custom_data=None):
-
-        print("Header {}".format(header))
-        print("Url {}".format(url))
-        print("Option {}".format(option))
-        print("Custom Data {}".format(custom_data))
 
         buffer_temp = BytesIO()
         c = pycurl.Curl()
@@ -329,6 +650,10 @@ class GitHubApp:
             c.setopt(c.POSTFIELDSIZE, len(json.dumps(custom_data)))
         elif option == "PUT":
             c.setopt(c.PUT, 1)
+        elif option == "DELETE":
+            c.setopt(c.CUSTOMREQUEST, "DELETE")
+            c.setopt(c.POSTFIELDS, json.dumps(custom_data))
+            c.setopt(c.POSTFIELDSIZE, len(json.dumps(custom_data)))
 
         if custom_data is not None:
             buffer_temp2 = BytesIO(json.dumps(custom_data).encode("utf-8"))
@@ -338,11 +663,9 @@ class GitHubApp:
         code = c.getinfo(c.HTTP_CODE)
         c.close()
 
-        print(
-            "Buffer content from PYCURL command\n{}".format(
-                json.loads(buffer_temp.getvalue())
-            )
-        )
+        if int(code) != 200:
+            print("Code is {}".format(code))
+            print(json.dumps(json.loads(buffer_temp.getvalue()), indent=4))
 
         return json.loads(buffer_temp.getvalue()), code
 
@@ -364,10 +687,7 @@ class GitHubApp:
             js_obj = js_obj[0]
 
         # The installation id will be listed at the end of the url path
-        print("Install id json obj {}".format(js_obj))
         self._install_id = js_obj["html_url"].rsplit("/", 1)[-1]
-
-        print("Installation id is {}".format(self._install_id))
 
     def _generateAccessToken(self):
         """
@@ -418,9 +738,9 @@ class GitHubApp:
 
             if isinstance(js_obj, list):
                 for ob in js_obj:
-                    node.insert(ob["name"], ob["type"])
+                    node.insert(ob["name"], ob["type"], ob["sha"])
             else:
-                node.insert(js_obj["name"], js_obj["type"])
+                node.insert(js_obj["name"], js_obj["type"], js_obj["sha"])
 
             self._fillTree(node, branch)
 
@@ -498,7 +818,7 @@ class GitHubApp:
         This method will determine if a branch exists on the github repository by pinging the
         github api.
         """
-        return branch in self.getBranches()
+        return branch in self.branches
 
     def refreshBranchCache(self):
         """ "
@@ -545,29 +865,69 @@ class GitHubApp:
             },
         )
 
+    def _generateContent(self, head):
+        contents = {}
+
+        dir_path = head.relative_path
+        for file_name in head.files:
+            contents[dir_path + "/" + file_name] = [file_name, head.getSha(file_name)]
+        for misc_name in head.miscellaneous:
+            contents[dir_path + "/" + misc_name] = [misc_name, head.getSha(misc_name)]
+        for node in head.nodes:
+            node_content = self._generateContent(node)
+            contents[dir_path + "/" + node.name] = [node.name, node.sha]
+            contents.update(node_content)
+        return contents
+
     def getContents(self, branch=None):
         """
         Returns the contents of a branch
 
         Returns the contents of a branch as a dictionary, where the key
-        is the content and the value is the sha of the file/folder etc.
+        is the content path and the value is a list of the file folder name
+        and the sha of the file/folder etc.
+        """
+        branch_tree = self.getBranchTree(branch)
+        return self._generateContent(branch_tree)
+
+    def remove(self, file_name_path, branch=None, file_sha=None, use_wiki=False):
+        """
+        This method will remove a file from the listed branch.
+
+        Provide the file name and path with respect to the repository root.
         """
         if branch is None:
-            branch = self._default_branch
-        # 1. Check if file exists if so get SHA
-        js_obj, _ = self._PYCURL(
-            self._header,
-            self._repo_url + "/contents?ref=" + branch,
-            custom_data={"branch": branch},
-        )
+            branch = "master"
+        # First check that the file exists in the repository
+        branch_tree = self.getBranchTree(branch)
+        # Only remove if the file actually exists
+        if branch_tree.exists(file_name_path):
 
-        contents = {}
-        if isinstance(js_obj, list):
-            # Cycle through list to try to find the right object
-            for obj in js_obj:
-                contents[obj["name"]] = obj["sha"]
+            if file_sha is None:
+                # Attempt to get it from the branch tree
+                file_sha = branch_tree.getSha(file_name_path)
+                if file_sha is None:
+                    error_msg = "Unable to remove existing file: "
+                    error_msg += "{}, sha is unknown.".format(file_name_path)
+                    raise Exception(error_msg)
 
-        return contents
+            if file_name_path.startswith("/"):
+                file_name_path = file_name_path[1:]
+            elif file_name_path.startswith("./"):
+                file_name_path = file_name_path[2:]
+
+            message = self._name + " is removing {}".format(file_name_path)
+
+            self._PYCURL(
+                self._header,
+                self._repo_url + "/contents/" + file_name_path,
+                "DELETE",
+                custom_data={
+                    "branch": branch,
+                    "sha": file_sha,
+                    "message": message,
+                },
+            )
 
     def upload(self, file_name, branch=None, use_wiki=False):
         """
@@ -682,22 +1042,37 @@ class GitHubApp:
 
         self._PYCURL(self._header, https_url_to_file, "PUT", custom_data)
 
-    def getBranchTree(self, branch):
+    def getBranchTree(self, branch=None):
         """
         Gets the contents of a branch as a tree
 
         Method will grab the contents of the specified branch from the
         remote repository. It will return the contents as a tree object.
+
+        The tree object provides some basic functionality such as indicating
+        the content type
         """
-        # 1. Check if file exists
-        js_obj, _ = self._PYCURL(
-            self._header, self._repo_url + "/contents", "PUT", {"branch": branch}
-        )
+        # 1. Check if branch exists
+        js_obj, _ = self._PYCURL(self._header, self._repo_url + "/branches", "GET")
 
         for obj in js_obj:
-            self._parth_root.insert(obj["name"], obj["type"])
+            if obj["name"] == branch:
 
-        self._fillTree(self._parth_root, branch)
+                # Get the top level directory structure
+                js_obj2, _ = self._PYCURL(
+                    self._header,
+                    self._repo_url + "/contents?ref=" + branch,
+                    custom_data={"branch": branch},
+                )
+
+                for obj2 in js_obj2:
+                    self._repo_root.insert(obj2["name"], obj2["type"], obj2["sha"])
+
+                self._fillTree(self._repo_root, branch)
+
+                return self._repo_root
+
+        raise Exception("Branch missing from repository {}".format(branch))
 
     def cloneWikiRepo(self):
         """
@@ -790,18 +1165,11 @@ class GitHubApp:
                 error_msg = error_msg + " to post status.\n{}".format(target_url)
                 raise Exception(error_msg)
 
-        print("Custom data is")
-        print("Before calling PYCURL header {}".format(self._header))
-        print("Before calling PYCURL repo_url {}".format(self._repo_url))
-        print("Before calling PYCURL commit_sha {}".format(commit_sha))
-        print("Custom data is")
-        print(custom_data_tmp)
-
         self._PYCURL(
             self._header,
             self._repo_url + "/statuses/" + commit_sha,
-            "POST",
-            custom_data_tmp,
+            option="POST",
+            custom_data=custom_data_tmp,
         )
 
     def getStatuses(self, commit_sha=None):
