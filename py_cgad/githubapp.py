@@ -180,7 +180,6 @@ class Node:
                     content_name = content_path[1:]
                 else:
                     content_name = content_path
-                print("Creating node {} sha {}".format(content_name, content_sha))
                 self._dirs.append(Node(content_name, self._rel_path + "/", content_sha))
 
             elif content_type == "file":
@@ -326,15 +325,12 @@ class Node:
             if mis == path:
                 return self._misc_sha[mis]
         for node in self._dirs:
-            print("Checking node names path {} name {}".format(path, node.name))
             if node.name == path:
                 return node._dir_sha
         for node in self._dirs:
             # Remove the dir1/ from dir1/dir2
-            print("Path is {}".format(path))
             if path.startswith(node.name + "/"):
                 new_path = path.split("/")[1][0:]
-                print("Looking in {} New Path is {}".format(node.name, new_path))
                 found_sha = node.getSha(new_path)
 
                 if found_sha is not None:
@@ -641,11 +637,6 @@ class GitHubApp:
             self._jwt_token = self._jwt_token.decode("utf-8")
 
     def _PYCURL(self, header, url, option=None, custom_data=None):
-
-        print("Header {}".format(header))
-        print("Url {}".format(url))
-        print("Option {}".format(option))
-        print("Custom Data {}".format(custom_data))
 
         buffer_temp = BytesIO()
         c = pycurl.Curl()
@@ -1174,12 +1165,12 @@ class GitHubApp:
                 error_msg = error_msg + " to post status.\n{}".format(target_url)
                 raise Exception(error_msg)
 
-            self._PYCURL(
-                self._header,
-                self._repo_url + "/statuses/" + commit_sha,
-                "POST",
-                custom_data_tmp,
-            )
+        self._PYCURL(
+            self._header,
+            self._repo_url + "/statuses/" + commit_sha,
+            option="POST",
+            custom_data=custom_data_tmp
+        )
 
     def getStatuses(self, commit_sha=None):
         """Get status of provided commit or commit has defined in the env vars."""
