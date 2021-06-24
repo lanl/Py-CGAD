@@ -672,9 +672,9 @@ class GitHubApp:
         code = c.getinfo(c.HTTP_CODE)
         c.close()
 
-        print("Code is {}".format(code))
-        print(json.dumps(json.loads(buffer_temp.getvalue()),indent=4))
-
+        if int(code) != 200:
+            print("Code is {}".format(code))
+            print(json.dumps(json.loads(buffer_temp.getvalue()),indent=4))
 
         return json.loads(buffer_temp.getvalue()), code
 
