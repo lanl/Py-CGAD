@@ -672,6 +672,10 @@ class GitHubApp:
         code = c.getinfo(c.HTTP_CODE)
         c.close()
 
+        print("Code is {}".format(code))
+        print(json.dumps(buffer_temp.getvalue(),indent=4))
+
+
         return json.loads(buffer_temp.getvalue()), code
 
     def _generateInstallationId(self):
