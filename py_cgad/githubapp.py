@@ -149,7 +149,7 @@ class Node:
             if content_path.count("/") > 1:
                 # Ignore the first / so grab [1]
                 sub_dir = content_path.split("/")[1]
-                new_content_path = content_path.split(substr)[1][1:]
+                new_content_path = content_path.split(sub_dir)[1][1:]
         elif content_path.count("/") > 0:
             sub_dir = content_path.split("/")[0]
             new_content_path = content_path.split(sub_dir)[1][0:]
