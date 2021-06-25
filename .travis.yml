@@ -27,5 +27,4 @@ script:
   - echo "Display env variables"
   - env
   - |
-    cd ./examples/PyCGADExample
     python3 -m pytest -s
