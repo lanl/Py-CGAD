@@ -1,3 +1,6 @@
 [submodule "examples/PyCGADExample"]
 	path = examples/PyCGADExample
 	url = https://github.com/JoshuaSBrown/PyCGADExample.git
+[submodule "examples/PyCGADExample2"]
+	path = examples/PyCGADExample2
+	url = https://github.com/JoshuaSBrown/PyCGADExample2.git

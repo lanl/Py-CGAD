@@ -15,6 +15,7 @@ before_install:
   - pwd
   - ls
   - openssl aes-256-cbc -K $encrypted_ecac9f3e2851_key -iv $encrypted_ecac9f3e2851_iv -in ./examples/PyCGADExample/statusreportingapp.2021-05-29.private-key.pem.enc -out ./examples/PyCGADExample/statusreportingapp.2021-05-29.private-key.pem -d
+  - openssl aes-256-cbc -K $encrypted_1f4402f4e5da_key -iv $encrypted_1f4402f4e5da_iv -in ./examples/PyCGADExample/uploaddownloadapp.2021-06-24.private-key.pem.enc -out ./examples/PyCGADExample2/uploaddownloadapp.2021-06-24.private-key.pem -d
 
 install:
   - ls
