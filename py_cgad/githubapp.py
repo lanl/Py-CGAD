@@ -482,10 +482,8 @@ class GitHubApp:
     def default_branch(self):
         """Return the default branch for the repository."""
         if self._default_branch is None:
-            #Determine the default by calling the repo
-            js_obj_list, _ = self._PYCURL(
-                    self._header, self._repo_url
-            )
+            # Determine the default by calling the repo
+            js_obj_list, _ = self._PYCURL(self._header, self._repo_url)
             self._default_branch = js_obj_list["default_branch"]
         return self._default_branch
 
