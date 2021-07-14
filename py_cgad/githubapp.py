@@ -481,13 +481,13 @@ class GitHubApp:
     @property
     def default_branch(self):
         """Return the default branch for the repository."""
-        if "master" in self._branches:
-            return "master"
-        if "main" in self._branches:
-            return "main"
-        raise Exception(
-            "No known default branch 'master' and 'main' do not appear to exist"
-        )
+        if default_branch is None:
+            #Determine the default by calling the repo
+            js_obj_list, _ = self._PYCURL(
+                    self._header, self._repo_url
+            )
+            print("Find default branch in here")
+            print(js_obj_list)
 
     def initialize(
         self,
@@ -521,7 +521,7 @@ class GitHubApp:
             self._create_branch = create_branch[0]
         else:
             self._create_branch = create_branch
-        self._default_branch = "develop"
+        self._default_branch = None
         self._default_image_branch = "figures"
         self._branches = []
         self._branch_current_commit_sha = {}
@@ -857,7 +857,7 @@ class GitHubApp:
         forking it of the latest commit of the default branch
         """
         if branch_to_fork_from is None:
-            branch_to_fork_from = self._default_branch
+            branch_to_fork_from = self.default_branch
         if self.branchExist(branch):
             return
 
@@ -998,12 +998,12 @@ class GitHubApp:
         """
 
         # Will only be needed if we are creating a branch
-        branch_to_fork_from = self._default_branch
+        branch_to_fork_from = self.default_branch
 
         if isinstance(file_name, list):
             file_name = file_name[0]
         if branch is None:
-            branch = self._default_branch
+            branch = self.default_branch
         if file_name.lower().endswith(
             (".png", ".jpg", ".jpeg", ".tiff", ".bmp", ".gif")
         ):
