@@ -31,6 +31,8 @@ jobs:
         python3 -m pip install --upgrade pip
         python3 -m pip install flake8 pytest
         python3 -m pip install . --user
+        openssl version
+        openssl enc --help
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
