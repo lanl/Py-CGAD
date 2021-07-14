@@ -1115,11 +1115,11 @@ class GitHubApp:
             branch = self.default_branch
         if branch != self._repo_root_branch:
             # It is a different branch that is cached
-            refreshBranchTreeCache(branch)
+            self.refreshBranchTreeCache(branch)
         if self._repo_root_initialized:
             return self._repo_root
         else:
-            refreshBranchTreeCache(branch)
+            self.refreshBranchTreeCache(branch)
             return self._repo_root
 
     def cloneWikiRepo(self):
