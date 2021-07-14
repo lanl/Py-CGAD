@@ -484,7 +484,9 @@ class GitHubApp:
             return "master"
         if "main" in self._branches:
             return "main"
-        raise Exception("No known default branch 'master' and 'main' do not appear to exist")
+        raise Exception(
+            "No known default branch 'master' and 'main' do not appear to exist"
+        )
 
     def initialize(
         self,
@@ -906,7 +908,7 @@ class GitHubApp:
         js_obj, _ = self._PYCURL(self._header, self._repo_url + "/branches", "GET")
 
         # Reset the cache
-        old_content = copy.deepcopy(self._repo_root) 
+        old_content = copy.deepcopy(self._repo_root)
         self._repo_root = Node()
         for obj in js_obj:
             if obj["name"] == branch:
@@ -929,8 +931,11 @@ class GitHubApp:
 
         # Make idempotent revert the changes
         self._repo_root = old_content
-        raise Exception("Branch missing from repository {} cannot refresh branch tree cache".format(branch))
-
+        raise Exception(
+            "Branch missing from repository {} cannot refresh branch tree cache".format(
+                branch
+            )
+        )
 
     def getContents(self, branch=None):
         """
@@ -1095,8 +1100,6 @@ class GitHubApp:
 
         self._PYCURL(self._header, https_url_to_file, "PUT", custom_data)
 
-    
-
     def getBranchTree(self, branch=None):
         """
         Gets the contents of a branch as a tree
@@ -1110,7 +1113,7 @@ class GitHubApp:
         if branch is None:
             branch = self.default_branch
         if branch != self._repo_root_branch:
-            #It is a different branch that is cached 
+            # It is a different branch that is cached
             refreshBranchTreeCache(branch)
         if self._repo_root_initialized:
             return self._repo_root
