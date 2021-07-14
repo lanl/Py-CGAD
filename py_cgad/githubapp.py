@@ -736,6 +736,9 @@ class GitHubApp:
                 custom_data={"branch": branch},
             )
 
+            print("Searching dir {}".format(self._repo_url + "/contents/" + node.path))
+            print("object is")
+            print(js_obj)
             if isinstance(js_obj, list):
                 for ob in js_obj:
                     node.insert(ob["name"], ob["type"], ob["sha"])
