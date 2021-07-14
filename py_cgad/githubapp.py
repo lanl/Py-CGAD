@@ -480,9 +480,9 @@ class GitHubApp:
 
     @property
     def default_branch(self):
-        if "master" in branches:
+        if "master" in self._branches:
             return "master"
-        if "main" in branches:
+        if "main" in self._branches:
             return "main"
         raise Exception("No known default branch 'master' and 'main' do not appear to exist")
 
@@ -763,11 +763,13 @@ class GitHubApp:
         page_index = 1
         self._branches = []
         self._branch_current_commit_sha = {}
+        print("Branches objects")
         while page_found:
             page_found = False
             js_obj_list, _ = self._PYCURL(
                 self._header, self._repo_url + "/branches?page={}".format(page_index)
             )
+            print(js_obj_list)
             page_index = page_index + 1
             for js_obj in js_obj_list:
                 page_found = True
