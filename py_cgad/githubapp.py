@@ -480,6 +480,7 @@ class GitHubApp:
 
     @property
     def default_branch(self):
+        """Return the default branch for the repository."""
         if "master" in self._branches:
             return "master"
         if "main" in self._branches:
