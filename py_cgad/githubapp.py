@@ -732,7 +732,7 @@ class GitHubApp:
 
             js_obj, _ = self._PYCURL(
                 self._header,
-                self._repo_url + "/contents/" + node.path,
+                self._repo_url + "/contents/" + node.path + "?ref=" + branch,
                 custom_data={"branch": branch},
             )
 
