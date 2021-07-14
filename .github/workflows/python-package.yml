@@ -28,9 +28,9 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get install curl libcurl4-openssl-dev
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        python -m pip install . --user
+        python3 -m pip install --upgrade pip
+        python3 -m pip install flake8 pytest
+        python3 -m pip install . --user
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
@@ -45,4 +45,5 @@ jobs:
         echo ${{ env.PYTHONPATH }}
         openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -in ${{ github.WORKSPACE }}/examples/pems/statusreportingapp.2021-06-11.private-key.pem.enc -out ${{ github.WORKSPACE }}/examples/PyCGADExample/statusreportingapp.2021-06-11.private-key.pem -pass pass:${{secrets.PYCGAD_EXAMPLE1_TOKEN}} -d
         openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -in  ${{ github.WORKSPACE }}/examples/pems/uploaddownloadapp.2021-06-24.private-key.pem.enc -out ${{ github.WORKSPACE }}/examples/PyCGADExample2/uploaddownloadapp.2021-06-24.private-key.pem -pass pass::${{secrets.PYCGAD_EXAMPLE2_TOKEN}} -d
-        python -m pytest
+        ls
+        python3 -m pytest -s .
