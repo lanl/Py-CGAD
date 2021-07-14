@@ -896,7 +896,9 @@ class GitHubApp:
 
         Will update regardless of whether the class already contains a
         local copy. Might be necessary if the remote github repository
-        is updated.
+        is updated. For instance if a file is added remotely. If however, you
+        are not worried about remote changes then it is not necessary, and it is
+        much faster to used the locally cached contents.
         """
         # 1. Check if branch exists
         js_obj, _ = self._PYCURL(self._header, self._repo_url + "/branches", "GET")
