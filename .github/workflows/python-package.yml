@@ -45,4 +45,4 @@ jobs:
         echo ${{ env.PYTHONPATH }}
         openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -in ${{ github.WORKSPACE }}/examples/pems/statusreportingapp.2021-06-11.private-key.pem.enc -out ${{ github.WORKSPACE }}/examples/PyCGADExample/statusreportingapp.2021-06-11.private-key.pem -pass pass:${{secrets.PYCGAD_EXAMPLE1_TOKEN}} -d
         openssl enc -aes-256-cbc -md sha512 -pbkdf2 -iter 100000 -salt -in  ${{ github.WORKSPACE }}/examples/pems/uploaddownloadapp.2021-06-24.private-key.pem.enc -out ${{ github.WORKSPACE }}/examples/PyCGADExample2/uploaddownloadapp.2021-06-24.private-key.pem -pass pass::${{secrets.PYCGAD_EXAMPLE2_TOKEN}} -d
-        python -m pytest -s
+        python -m pytest
