@@ -489,7 +489,7 @@ class GitHubApp:
             print("Find default branch in here")
             print(js_obj_list)
 
-            self._default_branch = js_obj_list["default"]
+            self._default_branch = js_obj_list["default_branch"]
         return self._default_branch
 
     def initialize(
