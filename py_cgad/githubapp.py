@@ -481,13 +481,16 @@ class GitHubApp:
     @property
     def default_branch(self):
         """Return the default branch for the repository."""
-        if default_branch is None:
+        if self._default_branch is None:
             #Determine the default by calling the repo
             js_obj_list, _ = self._PYCURL(
                     self._header, self._repo_url
             )
             print("Find default branch in here")
             print(js_obj_list)
+
+            self._default_branch = js_obj_list["default"]
+        return self._default_branch
 
     def initialize(
         self,
