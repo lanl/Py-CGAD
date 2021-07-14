@@ -478,6 +478,14 @@ class GitHubApp:
         """Returns the name of the app."""
         return self._name
 
+    @property
+    def default_branch(self):
+        if "master" in branches:
+            return "master"
+        if "main" in branches:
+            return "main"
+        raise Exception("No known default branch 'master' and 'main' do not appear to exist")
+
     def initialize(
         self,
         pem_file,
@@ -516,6 +524,8 @@ class GitHubApp:
         self._branch_current_commit_sha = {}
         self._api_version = "application/vnd.github.v3+json"
         self._repo_root = Node()
+        self._repo_root_initialized = False
+        self._repo_root_branch = "None"
 
         if path_to_repo is not None:
             # Check that the repo specified is valid
@@ -824,8 +834,8 @@ class GitHubApp:
         return branch in self.branches
 
     def refreshBranchCache(self):
-        """ "
-        Method forces an update of the localy stored branch tree.
+        """
+        Method forces an update of the localy stored list of branches.
 
         Will update regardless of whether the class already contains a
         local copy. Might be necessary if the remote github repository
@@ -881,6 +891,44 @@ class GitHubApp:
             contents[dir_path + "/" + node.name] = [node.name, node.sha]
             contents.update(node_content)
         return contents
+
+    def refreshBranchTreeCache(self, branch):
+        """
+        Method forces an update of the localy stored branch contents.
+
+        Will update regardless of whether the class already contains a
+        local copy. Might be necessary if the remote github repository
+        is updated.
+        """
+        # 1. Check if branch exists
+        js_obj, _ = self._PYCURL(self._header, self._repo_url + "/branches", "GET")
+
+        # Reset the cache
+        old_content = copy.deepcopy(self._repo_root) 
+        self._repo_root = Node()
+        for obj in js_obj:
+            if obj["name"] == branch:
+
+                # Get the top level directory structure
+                js_obj2, _ = self._PYCURL(
+                    self._header,
+                    self._repo_url + "/contents?ref=" + branch,
+                    custom_data={"branch": branch},
+                )
+
+                for obj2 in js_obj2:
+                    self._repo_root.insert(obj2["name"], obj2["type"], obj2["sha"])
+
+                self._fillTree(self._repo_root, branch)
+
+                self._repo_root_branch = branch
+                self._repo_root_initialized = True
+                return self._repo_root
+
+        # Make idempotent revert the changes
+        self._repo_root = old_content
+        raise Exception("Branch missing from repository {} cannot refresh branch tree cache".format(branch))
+
 
     def getContents(self, branch=None):
         """
@@ -1045,6 +1093,8 @@ class GitHubApp:
 
         self._PYCURL(self._header, https_url_to_file, "PUT", custom_data)
 
+    
+
     def getBranchTree(self, branch=None):
         """
         Gets the contents of a branch as a tree
@@ -1055,27 +1105,16 @@ class GitHubApp:
         The tree object provides some basic functionality such as indicating
         the content type
         """
-        # 1. Check if branch exists
-        js_obj, _ = self._PYCURL(self._header, self._repo_url + "/branches", "GET")
-
-        for obj in js_obj:
-            if obj["name"] == branch:
-
-                # Get the top level directory structure
-                js_obj2, _ = self._PYCURL(
-                    self._header,
-                    self._repo_url + "/contents?ref=" + branch,
-                    custom_data={"branch": branch},
-                )
-
-                for obj2 in js_obj2:
-                    self._repo_root.insert(obj2["name"], obj2["type"], obj2["sha"])
-
-                self._fillTree(self._repo_root, branch)
-
-                return self._repo_root
-
-        raise Exception("Branch missing from repository {}".format(branch))
+        if branch is None:
+            branch = self.default_branch
+        if branch != self._repo_root_branch:
+            #It is a different branch that is cached 
+            refreshBranchTreeCache(branch)
+        if self._repo_root_initialized:
+            return self._repo_root
+        else:
+            refreshBranchTreeCache(branch)
+            return self._repo_root
 
     def cloneWikiRepo(self):
         """
