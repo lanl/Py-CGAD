@@ -486,9 +486,6 @@ class GitHubApp:
             js_obj_list, _ = self._PYCURL(
                     self._header, self._repo_url
             )
-            print("Find default branch in here")
-            print(js_obj_list)
-
             self._default_branch = js_obj_list["default_branch"]
         return self._default_branch
 
@@ -752,9 +749,6 @@ class GitHubApp:
                 custom_data={"branch": branch},
             )
 
-            print("Searching dir {}".format(self._repo_url + "/contents/" + node.path))
-            print("object is")
-            print(js_obj)
             if isinstance(js_obj, list):
                 for ob in js_obj:
                     node.insert(ob["name"], ob["type"], ob["sha"])
@@ -769,13 +763,11 @@ class GitHubApp:
         page_index = 1
         self._branches = []
         self._branch_current_commit_sha = {}
-        print("Branches objects")
         while page_found:
             page_found = False
             js_obj_list, _ = self._PYCURL(
                 self._header, self._repo_url + "/branches?page={}".format(page_index)
             )
-            print(js_obj_list)
             page_index = page_index + 1
             for js_obj in js_obj_list:
                 page_found = True
