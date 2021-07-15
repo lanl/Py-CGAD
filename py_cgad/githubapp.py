@@ -596,15 +596,29 @@ class GitHubApp:
         if isinstance(pem_file, list):
             pem_file = pem_file[0]
 
+        pem_file = self._validatePemFile(pem_file)
+        self._generateJWT(pem_file)
+        self._generateInstallationId()
+        self._generateAccessToken()
+
+    def _validatePemFile(self, pem_file):
+        """Ensures pem file exists and checks env variable"""
+        if pem_file == None:
+            if "GITHUB_APP_PEM" in os.environ:
+                pem_file = os.environ.get("GITHUB_APP_PEM")
+            else:
+                error_msg = "A pem file has not been specified and "
+                error_msg += "GITHUB_APP_PEM env varaible is not defined"
+                raise Exception(error_msg)
+
         # Check that pem file is actually a file
         if not os.path.isfile(pem_file):
             error_msg = "Permissions file ({})".format(pem_file)
             error_msg = error_msg + " is not a valid file."
             raise Exception(error_msg)
 
-        self._generateJWT(pem_file)
-        self._generateInstallationId()
-        self._generateAccessToken()
+        self._log.info("File loc %s" % pem_file)
+        return pem_file
 
     def _generateJWT(self, pem_file):
         """
@@ -621,16 +635,6 @@ class GitHubApp:
             "iss": self._app_id,
         }
 
-        PEM = None
-        if pem_file == None:
-            if "GITHUB_APP_PEM" in os.environ:
-                pem_file = os.environ.get("GITHUB_APP_PEM")
-            else:
-                error_msg = "A pem file has not been specified and "
-                error_msg += "GITHUB_APP_PEM env varaible is not defined"
-                raise Exception(error_msg)
-
-        self._log.info("File loc %s" % pem_file)
         certs = pem.parse_file(pem_file)
         PEM = str(certs[0])
 
