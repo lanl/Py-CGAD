@@ -602,7 +602,7 @@ class GitHubApp:
         self._generateAccessToken()
 
     def _validatePemFile(self, pem_file):
-        """Ensures pem file exists and checks env variable"""
+        """Ensures pem file exists and checks env variable."""
         if pem_file == None:
             if "GITHUB_APP_PEM" in os.environ:
                 pem_file = os.environ.get("GITHUB_APP_PEM")
