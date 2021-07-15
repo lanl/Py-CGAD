@@ -23,6 +23,7 @@ def urlIsValid(candidate_url):
     # Regex to check valid URL
     return validators.url(candidate_url)
 
+
 class Node:
     def __init__(self, dir_name="", rel_path=".", dir_sha=None):
         """
