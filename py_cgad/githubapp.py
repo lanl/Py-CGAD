@@ -16,33 +16,12 @@ import pycurl
 import re
 from git import Repo
 import git
+import validators
 
 # Checks to ensure a url is valid
 def urlIsValid(candidate_url):
     # Regex to check valid URL
-    regex = (
-        "((http|https)://)(www.)?"
-        + "[a-zA-Z0-9@:%._\\+~#?&//=]"
-        + "{2,256}\\.[a-z]"
-        + "{2,6}\\b([-a-zA-Z0-9@:%"
-        + "._\\+~#?&//=]*)"
-    )
-
-    # Compile the ReGex
-    compiled_regex = re.compile(regex)
-
-    # If the string is empty
-    # return false
-    if candidate_url == None:
-        return False
-
-    # Return if the string
-    # matched the ReGex
-    if re.search(compiled_regex, candidate_url):
-        return True
-    else:
-        return False
-
+    return validators.url(candidate_url)
 
 class Node:
     def __init__(self, dir_name="", rel_path=".", dir_sha=None):

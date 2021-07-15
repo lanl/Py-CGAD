@@ -44,5 +44,6 @@ setup(
         "pycurl>7.18.2",
         "pem",
         "gitpython",
+        "validators",
     ],
 )
