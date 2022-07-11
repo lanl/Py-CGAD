@@ -1158,7 +1158,7 @@ class GitHubApp:
         self._log.info("Posting context: %s" % context)
         self._log.info("Posting description: %s" % description)
         self._log.info("Posting url: %s" % target_url)
-        state_list = ["pending", "failed", "error", "success"]
+        state_list = ["pending", "failure", "error", "success"]
 
         if state not in state_list:
             raise Exception("Unrecognized state specified " + state)
