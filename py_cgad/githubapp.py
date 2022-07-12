@@ -1150,6 +1150,21 @@ class GitHubApp:
     def postStatus(
         self, state, commit_sha=None, context=None, description=None, target_url=None
     ):
+        """Method for posting the status using the App to a provided commit
+        
+        :param state: Possible states that can be posted are one of "failure", "error", "success", or "pending"
+        :type state: string
+        :param context: Context that is included with the status when it is posted
+        :type context: string
+        :param description: Description that is posted with the status in a pr with the associated commit
+        :type description: string
+        :param target_url: A url to link to when the status is posted
+        :type target_url: string
+        
+        By default if no commit is specified then the method will search env variables
+        for CI_COMMIT_SHA and TRAVIS_COMMIT, which are the environmental variables defined by travis
+        and a gitlabrunner by default.
+        """
         if isinstance(state, list):
             state = state[0]
 
